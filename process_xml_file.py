@@ -64,7 +64,7 @@ def modify_xml_file(file):
                          'EXTENSION_TABLE_NAME': 'TEST_SENSOR_{}'.format(parameters[lbl]),
                          'NAME': 'Tracker Strip-Sensor {} Test'.format(parameters[lbl])}
 
-    # run_number = get_run_number()
+    run_number = get_run_number()
 
     for elm in root.findall(".//"):
         if elm.tag in xml_modifications.keys():
@@ -73,8 +73,8 @@ def modify_xml_file(file):
             date = elm.text
             new_date = datetime.datetime.strptime(date, '%a %b %d %H:%M:%S %Y')
             elm.text = str(new_date)
-        # if elm.tag == 'RUN_NUMBER':
-        #   elm.text = str(run_number)
+        if elm.tag == 'RUN_NUMBER':
+            elm.text = str(run_number)
 
     tree.write(file, xml_declaration=True, encoding='UTF-8')
 
@@ -87,6 +87,10 @@ def upload_to_db(folder):
        try:
             p1 = subprocess.run('python cmsdbldr_client.py --login --url=https://cmsdca.cern.ch/trk_loader/trker/cmsr {}',format(file),
                                capture_output=True)
+             
+             answer = p1.stdout.decode()
+             answer = answer.split()
+             print(answer)
        except Exception as error:
             print(error)
 
@@ -94,7 +98,7 @@ def upload_to_db(folder):
 def make_zip_file(path):
 
     filePaths = []
-    #zf = zipfile.ZipFile("myzipfile.zip", "w")
+    
     for dirname, subdirs, files in os.walk(path):
         for filename in files:
             # Create the full filepath by using os module.
@@ -102,7 +106,7 @@ def make_zip_file(path):
             filePaths.append(filePath)
     print(filePaths)
 
-    with zipfile.ZipFile("myzipfile.zip", "w", zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile("zipfile.zip", "w", zipfile.ZIP_DEFLATED) as zf:
       for file in filePaths:
             file1 = file.split(os.sep).pop()
             print(file1)
@@ -121,7 +125,6 @@ def main():
 
 
     args = parse_args()
-    make_zip_file(args.path)
     files = glob.glob(args.path + os.sep + '*.xml')
 
     #for file in files:
