@@ -1,0 +1,45 @@
+#configuration file for the generation of an xml list with parameters
+
+Parameters:
+  IVC:
+   current:     [Voltage, current, temperature, humidity] #IV
+   capacitance: [Voltage, capacitance, temperature, humidity] #CV
+   
+  Str:
+   Istrip: [Pad, Istrip, Idark, Temperature, Humidity]
+   Rpoly:  [Pad, Rpoly, Idark, Temperature, Humidity]
+   Cac:    [Pad, Cac, Idark, Temperature, Humidity]    
+   Idiel:  [Pad, Idiel, Idark, Temperature, Humidity]
+   Cint:   [Pad, Cint, Temperature, Humidity]
+   Rint:   [Pad, Rint, Temperature, Humidity]
+   
+   
+Headers:
+
+   Stripscan: [Pad, Istrip, Rpoly, Idark, Cac, Cac_Rp, Cint, Cint_Rp, Idiel, Rint, Temperature, Humidity]
+   IVCV :     [Voltage, current, capacitance, temperature, humidity]
+   
+
+Units:
+    
+    Istrip: 1e9
+    Idark: 1e9
+    Rpoly : 1e-6
+    Cac: 1e12
+    Idiel: 1e9
+    Cint: 1e12
+    Rint: 1e-9
+    current: 1e9
+    capacitance: 1e12
+    
+
+xml_table_name:
+    
+    Istrip: IS
+    Rpoly : RS
+    Cac: CS
+    Idiel: PHS
+    Cint: CIS
+    Rint: RIS
+    current: IV
+    capacitance: CV
