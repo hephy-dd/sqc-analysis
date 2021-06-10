@@ -1,0 +1,92 @@
+---
+  Settings_name: CMSxmlTemplate
+
+  DB_uploader_API_module: "D:\\GitRepos\\cmsdbldr" # The directory, where the db uploader is located
+  DB_downloader_API_module: "D:\\GitRepos\\resthub\\clients\\python\\src\\main\\python\\rhapi.py --url=http://dbloader-tracker:8113 -f csv 'select r.run_number from trker_cmsr.trk_ot_test_nextrun_v r'" # The directory, where the db downloader is located
+  DB_downloader_API_module_regex: "RUN\\s+NUMBER\\s+(.*)"
+
+  Template:
+    HEADER:
+      TYPE:
+        EXTENSION_TABLE_NAME: <EXTENSION_TABLE_NAME>
+        NAME: <NAME>
+      RUN:
+        RUN_TYPE: <Project> # Mandatory: ??? > IS Test Measurement
+        RUN_NUMBER: "[DB_downloader_API_module]"
+        LOCATION: <Location> # HEPHY
+        INITIATED_BY_USER: <Operator> # The Operator of this measurement
+        RUN_BEGIN_TIMESTAMP: <Date> # Optional but good to have
+        RUN_END_TIMESTAMP: <ENDTIME> # Optional
+        COMMENT_DESCRIPTION: <Comment> # Optional
+    DATA_SET:
+      COMMENT_DESCRIPTION: <DATA_COMMENT> # Optional
+      VERSION: <VERSION> # The data version? How many times I started the measurement?
+      PART:
+        KIND_OF_PART: <Sensor Type> # Hamamatsu 2S Sensor
+        BARCODE: <ID> # HPK_VPX28441_1002_2S
+      DATA: //DATA_DUMP_template//
+
+  File_specific_header:
+    Istrip:
+        HEADER:
+            TYPE:
+                EXTENSION_TABLE_NAME: TEST_SENSOR_IS
+                NAME: TrackerStrip-Sensor IS Test
+            RUN:
+                RUN_TYPE: IS Test Measurements
+                
+  DATA_DUMP_template:
+    #Idark:
+     #   STRIP: <Pad>
+      #  CURRNT_NAMPR: <Istrip>
+       # TEMP_DEGC: <Temperature>
+        #RH_PRCNT: <Humidity>
+        #BIASCURRNT_NAMPR: <Idark>
+    Istrip:
+        STRIP: <Pad>
+        CURRNT_NAMPR: <Istrip>
+        TEMP_DEGC: <Temperature>
+        RH_PRCNT: <Humidity>
+        BIASCURRNT_NAMPR: <Idark>
+    Rpoly:
+        STRIP: <Pad>
+        RESSTNC_MOHM: <Rpoly>
+        TEMP_DEGC: <Temperature>
+        RH_PRCNT: <Humidity>
+        BIASCURRNT_NAMPR: <Idark>
+    Cac:
+        STRIP: <Pad>
+        CAPCTNC_PFRD: <Cac>
+        TEMP_DEGC: <Temperature>
+        RH_PRCNT: <Humidity>
+        BIASCURRNT_NAMPR: <Idark>
+    Idiel:
+        STRIP: <Pad>
+        CURRNTPH_NAMPR: <Idiel>
+        TEMP_DEGC: <Temperature>
+        RH_PRCNT: <Humidity>
+        BIASCURRNT_NAMPR: <Idark>
+    Cint:
+        STRIPCOUPLE: <Pad>
+        CAPCTNC_PFRD: <Cint>
+        TEMP_DEGC: <Temperature>
+        RH_PRCNT: <Humidity>
+    Rint:
+        STRIPCOUPLE: <Pad>
+        RESSTNC_GOHM: <Rint>
+        TEMP_DEGC: <Temperature>
+        RH_PRCNT: <Humidity>
+    current: 
+        VOLTS: <Voltage>
+        CURRENT: <current>
+        TEMP_DEGC: <temperature>
+        RH_PRCNT: <humidity>
+    capacitance:
+        VOLTS: <Voltage>
+        CAP: <capacitance>
+        TEMP_DEGC: <temperature>
+        RH_PRCNT: <humidity>
+
+
+
+ 
