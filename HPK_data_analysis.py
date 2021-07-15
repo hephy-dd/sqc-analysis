@@ -20,12 +20,23 @@ def make_dataframe_from_ascii(datafile, skip, max_row, quantity):
     return df
 
 
+def find_date(datafile):
+    f = open(datafile)
+    lines = f.readlines()
+    date = lines[6][6:]
+
+    return date
+
+
 
 def find_bad_strips(datafile):
 
     f = open(datafile)
     lines = f.readlines()
     bad_strips = lines[8][12] # finds the string which corresponds to # of bad strips and assigns it to a parameter
+
+    if bad_strips=='-':
+        bad_strips=0
 
     return bad_strips
 
@@ -35,7 +46,10 @@ def check_current(df):
     i600 = df['Current'].loc[df['Voltage'] == 600].values[0]
     i800 = df['Current'].loc[df['Voltage'] == 800].values[0]
     i1000 = df['Current'].loc[df['Voltage'] == 1000].values[0]
-    ratio = i800/i600
+    if not np.isnan(i800):
+        ratio = i800/i600
+    else:
+        ratio = 0
 
     #returns the currents in the scale of nA
     return i600*1e9, i800*1e9, i1000*1e9, ratio
@@ -100,6 +114,7 @@ def make_dictionary_with_currents(files):
     batch = 0
     total_bad_strips=0
     ratio_list=[]
+    i600_list =[]
 
     for f in files:
 
@@ -113,9 +128,12 @@ def make_dictionary_with_currents(files):
         try:
             df = make_dataframe_from_ascii(f, 24, 50, 'Current')
             i600, i800, i1000, ratio = check_current(df)
+
             ratio_list.append(ratio)
             i_dict.update({sensor: [i600, i800, i1000]})
             total_bad_strips += int(find_bad_strips(f))
+
+            i600_list.append(i600)
 
 
 
@@ -124,7 +142,7 @@ def make_dictionary_with_currents(files):
 
     i_dict = dict(sorted(i_dict.items()))
 
-    return i_dict, batch, total_bad_strips, ratio_list
+    return i_dict, batch, total_bad_strips, ratio_list, i600_list
 
 
 
@@ -140,6 +158,7 @@ def plot_IVCV(files):
 
     for f in files:
 
+        find_date(f)
         #the following process is based on HPK standard ascii file names. If the latter changes then we need to modify the lines below
         os.path.basename(os.path.normpath(f))
         batch_1 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[2:3])
@@ -239,7 +258,7 @@ def main():
             plot_IVCV(files)
             plt.clf()
 
-            i_dict, batch, total_bad_strips, ratio_list = make_dictionary_with_currents(files)
+            i_dict, batch, total_bad_strips, ratio_list, i600_list = make_dictionary_with_currents(files)
             plot_currents_per_batch(i_dict, batch, total_bad_strips)
             i_dict.clear()
             plt.clf()
@@ -255,7 +274,7 @@ def main():
             plot_IVCV(files)
             plt.clf()
 
-            i_dict, batch, total_bad_strips, ratio_list = make_dictionary_with_currents(files)
+            i_dict, batch, total_bad_strips, ratio_list, i600_list = make_dictionary_with_currents(files)
             plot_currents_per_batch(i_dict, batch, total_bad_strips)
             i_dict.clear()
             plt.clf()
@@ -264,9 +283,7 @@ def main():
 
 
 
-
-
 ##### To run the script use the command: python HPK_data.py path/folder_name
 
 if __name__ == "__main__":
-    main()
+   main()
