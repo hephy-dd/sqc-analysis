@@ -11,15 +11,25 @@ from datetime import datetime
 def find_sensor_ID(files):
 
     for file in files:
+
         if 'PSS' in file:
             id = 'PSS'
         elif '2-S' in file:
             id = '2-S'
+        else:
+            id = 'PS-P'
 
     return id
 
+def clear_nan(array):
+
+   array = [ x for x in array if not np.isnan(x)]
+   return array
+
+
 
 def MAD(list, list_median):
+
 
      list_mad = np.median(np.abs(((list - list_median))))
      return list_mad
@@ -29,7 +39,7 @@ def make_plot(df):
 
     fig, ax = plt.subplots()
     index = 0
-    colors = ['blue', 'red']
+    colors = ['blue', 'red', 'green']
     for key, group in df.groupby(['ID']):
         ax = group.plot(ax=ax, kind='scatter', x='Date', y='I600', yerr='Stdev', c=colors[index], label=key)
         index += 1
@@ -75,10 +85,16 @@ def main():
 
 
               i_dict, batch, total_bad_strips, ratio_list, i600_list = make_dictionary_with_currents(glob_files)
+              i600_list = clear_nan(i600_list)
               i600.append(np.median(i600_list))
+
               error.append(MAD(i600_list, np.median(i600_list)))
 
         temp_dictionary = {'Date': dates, 'I600': i600, 'Stdev': error, 'ID': id_list}
+        print(i600)
+        print(id_list)
+        print(error)
+        print(dates)
         df = pd.DataFrame(temp_dictionary, columns = ['Date', 'I600', 'Stdev', 'ID'])
         df = df.sort_values(by='Date')
 
