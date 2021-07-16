@@ -19,7 +19,7 @@ def make_dataframe_from_ascii(datafile, skip):
 
     data = np.genfromtxt(datafile, skip_header=skip, delimiter=",", max_rows = 20348)
 
-    df = pd.DataFrame(data, columns= ['Timestamp', 'Voltage', 'Current', 'pt100', 'cts_temp', 'cts_humi', 'cts_status', 'cts_program', 'hv_status'])
+    df = pd.DataFrame(data, columns= ['Timestamp', 'Voltage', 'Current', 'smu_current', 'pt100', 'cts_temp', 'cts_humi', 'cts_status', 'cts_program', 'hv_status'])
 
     return df
 
@@ -206,7 +206,6 @@ def create_bookeh_plots(plot_it_list, plot_iv_list, df, fig_index):
        IV_plot.opts(legend_position='top_right')
        IV_plot.opts(norm={'axiswise': False})
 
-       print(df.get('cts_humi'))
        humi = plot_temp_humi(df)
        new_plot2 = hv.Layout( IV_plot+ humi + new_plot).cols(1)
        new_plot2.opts(shared_axes=False)
