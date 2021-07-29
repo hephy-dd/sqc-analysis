@@ -10,7 +10,7 @@ import subprocess
 import argparse
 import os
 import glob
-
+import logging
 
 
 '''
@@ -23,6 +23,9 @@ Developed by Kostas Damanakis, based on Dominic's Blöch script
 '''
 
 
+logger = logging.getLogger(__name__)
+
+logging.basicConfig(filename='xml_upload.log', level=logging.INFO)#, format='%(levelname)s:%(name)s:%(message)s')
 
 ########## Data handling functions ############
 
@@ -278,6 +281,7 @@ def modify_xml_file(file):
 
     file1 = file.split('.')[0]
     lbl = '_'.join(file1.split('_')[6:7])  # dummy solution to get the parameter string from the file name
+    print(lbl)
     xml_table_name =  read_yaml_configuration('config_xml_list.yml')
 
     tree = ET.parse(file)
@@ -384,7 +388,9 @@ def generate_all_xml_files(filename, path):
 
 
 def get_run_number():
-    p1 = subprocess.run('python rhapi.py --login --url=https://cmsomsdet.cern.ch/tracker-resthub -f csv --clean "select r.run_number from trker_cmsr.trk_ot_test_nextrun_v r" ', capture_output=True)
+    #p1 = subprocess.run('python rhapi.py --login --url=https://cmsomsdet.cern.ch/tracker-resthub -f csv --clean "select r.run_number from trker_cmsr.trk_ot_test_nextrun_v r" ', capture_output=True)
+    p1 = subprocess.run( ['python', 'rhapi.py', '--login', '--url=https://cmsomsdet.cern.ch/tracker-resthub', '-f', 'csv', '--clean',
+         "select r.run_number from trker_cmsr.trk_ot_test_nextrun_v r"], capture_output=True)
 
     answer = p1.stdout.decode()
     answer = answer.split()
@@ -398,15 +404,17 @@ def upload_to_db(folder):
     for file in folder:
 
         try:
-            p1 = subprocess.run(
-                'python cmsdbldr_client.py --login --url=https://cmsdca.cern.ch/trk_loader/trker/cmsr {}', format(file),
-                capture_output=True)
+            p1 = subprocess.run(['python', 'cmsdbldr_client.py', '--login', '--url=https://cmsdca.cern.ch/trk_loader/trker/cmsr', '{}'.format(file)])
+            #p1 = subprocess.run(
+             #   'python cmsdbldr_client.py --login --url=https://cmsdca.cern.ch/trk_loader/trker/cmsr {}',format(file),
+              #  capture_output=True)
 
             answer = p1.stdout.decode()
             answer = answer.split()
-            print(answer)
+            logging.info('Uploading file {} replied with {}'.format(file, answer))
         except Exception as error:
             print(error)
+            #logging.exception('Exception occured: {}'.format(error))
 
 
 
@@ -424,16 +432,16 @@ def run():
 
     args = parse_args()
 
-    for subdirs, dirs, files in os.walk(args.path):
+    #for subdirs, dirs, files in os.walk(args.path):
 
-        path = args.path
-        filename = glob.glob(path + os.sep + '*.txt')
+        #path = args.path
+        #filename = glob.glob(path + os.sep + '*.txt')
 
-        generate_all_xml_files(filename, path)
+       # generate_all_xml_files(filename, path)
 
     xml_files_list = glob.glob(args.path + os.sep + '*.xml')
 
-    #upload_to_db(xml_files_list)
+    upload_to_db(xml_files_list)
 
 
 if __name__ == "__main__":
