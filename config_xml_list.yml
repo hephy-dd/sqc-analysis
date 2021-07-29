@@ -16,7 +16,7 @@ Parameters:
    
 Headers:
 
-   Stripscan: [Pad, Istrip, Rpoly, Idark, Cac, Cac_Rp, Cint, Cint_Rp, Idiel, Rint, Temperature, Humidity]
+   Stripscan: [Pad, Istrip, Rpoly, Cac, Cac_Rp, Idiel, Cint, Cint_Rp, Idark, Rint, Temperature, Humidity]
    IVCV :     [Voltage, current, capacitance, temperature, humidity]
    
 
