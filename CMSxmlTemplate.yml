@@ -62,7 +62,7 @@
         BIASCURRNT_NAMPR: <Idark>
     Idiel:
         STRIP: <Pad>
-        CURRNTPH_NAMPR: <Idiel>
+        CURRNTPH_NAMP: <Idiel>
         TEMP_DEGC: <Temperature>
         RH_PRCNT: <Humidity>
         BIASCURRNT_NAMPR: <Idark>
@@ -78,12 +78,12 @@
         RH_PRCNT: <Humidity>
     current: 
         VOLTS: <Voltage>
-        CURRENT: <current>
+        CURRNT_NAMP: <current>
         TEMP_DEGC: <temperature>
         RH_PRCNT: <humidity>
     capacitance:
         VOLTS: <Voltage>
-        CAP: <capacitance>
+        CAPCTNC_PFRD: <capacitance>
         TEMP_DEGC: <temperature>
         RH_PRCNT: <humidity>
 
