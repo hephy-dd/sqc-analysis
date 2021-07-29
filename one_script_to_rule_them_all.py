@@ -25,13 +25,13 @@ def which_script_to_run():
     path = args.path
 
     if args.option == 'LT':
-        p1 = subprocess.run(['python', 'Longterm_SQC.py', '{}'.format(path)])
+        p1 = subprocess.run(['python3', 'Longterm_SQC.py', '{}'.format(path)])
 
     elif args.option== 'xml':
-        p1 = subprocess.run(['python', 'xml_generation.py', '{}'.format(path)])
+        p1 = subprocess.run(['python3', 'xml_generation.py', '{}'.format(path)])
 
     elif args.option == 'a':
-        p1 = subprocess.run(['python', 'SQC_data_analysis.py', '{}'.format(path)])
+        p1 = subprocess.run(['python3', 'SQC_data_analysis.py', '{}'.format(path)])
 
     else:
         print("Not valid input! \nPlease enter \n'LT' : if you want to run the longterm script \n'a': if you want to analyse the ascii files "
