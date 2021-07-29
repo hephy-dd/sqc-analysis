@@ -17,7 +17,7 @@ hv.extension('bokeh')
 
 def make_dataframe_from_ascii(datafile, skip):
 
-    data = np.genfromtxt(datafile, skip_header=skip, delimiter=",", max_rows = 20348)
+    data = np.genfromtxt(datafile, skip_header=skip, delimiter=",", encoding = 'latin-1')
 
     df = pd.DataFrame(data, columns= ['Timestamp', 'Voltage', 'Current', 'smu_current', 'pt100', 'cts_temp', 'cts_humi', 'cts_status', 'cts_program', 'hv_status'])
 
