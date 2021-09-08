@@ -4,6 +4,8 @@ import sys
 import argparse
 import numpy as np
 import glob
+from scipy.interpolate import CubicSpline
+import warnings
 import matplotlib.pyplot as plt
 
 
@@ -78,6 +80,16 @@ def plot_scatter(x, y, color, label, title, bad_strips, sensors_reached_complian
 
 
 
+def plot_vfd(x, y, title):
+
+    plt.scatter(x, y, color='red')
+    plt.title("Batch {} Extracted Vfd from HPK data".format(title))
+    plt.ylabel('Full Depletion Voltage [V]')
+    plt.tick_params(axis='x', labelsize=7)
+    plt.xticks(rotation=90, ha='right')
+
+
+
 
 def plot_graph(x, y, yaxis, batch, marker, label, color):
 
@@ -126,7 +138,8 @@ def make_dictionary_with_currents(files):
         sensor = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[3:4]) # this is the sensor ID (just the number for visualisation purposes)
 
         try:
-            df = make_dataframe_from_ascii(f, 24, 50, 'Current')
+            df = make_dataframe_from_ascii(f, 23, 51, 'Current')
+
             i600, i800, i1000, ratio = check_current(df)
 
             ratio_list.append(ratio)
@@ -153,6 +166,7 @@ def plot_IVCV(files):
     batch = index = marker_index = 0
     capacitance_dict={}
     current_dict = {}
+    vfd_dict = {}
 
 
 
@@ -167,8 +181,8 @@ def plot_IVCV(files):
         sensor = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[3:4]) # this is the sensor ID (just the number for visualisation purposes)
 
         try:
-            df1 = make_dataframe_from_ascii(f, 23, 50, 'Current')
-            df2 = make_dataframe_from_ascii(f, 77, 40, 'Capacitance')
+            df1 = make_dataframe_from_ascii(f, 23, 51, 'Current')
+            df2 = make_dataframe_from_ascii(f, 76, 41, 'Capacitance')
 
             current_dict.update({sensor: (df1['Current']*1e9).values})
             capacitance_dict.update({sensor: (1/df2['Capacitance']**2).values})
@@ -179,8 +193,14 @@ def plot_IVCV(files):
             iv_voltages = df1['Voltage'].values
             cv_voltages= df2['Voltage'].values
 
+
+            v_fd = analyse_cv(cv_voltages, (1/df2['Capacitance']**2).values)
+            vfd_dict.update({sensor: v_fd})
+
+
         except Exception as e:
             print(e)
+
 
     for sensor,current in current_dict.items():
 
@@ -205,6 +225,13 @@ def plot_IVCV(files):
              marker_index +=1
 
     plt.savefig("CV_{}.png".format(batch))
+    plt.clf()
+
+    for sensor, vfd in vfd_dict.items():
+
+        plot_vfd(sensor, vfd, batch)
+
+    plt.savefig("Vfd_{}.png".format(batch))
 
 
 
@@ -233,7 +260,46 @@ def find_compliance(i_dict):
     return sensors_reached_compliance
 
 
+def analyse_cv(v, c, cut_param=0.004, debug=False):
 
+    # init
+    v_dep2 = -1
+
+
+
+    # get spline fit, requires strictlty increasing array
+    y_norm = c / np.max(c)
+    x_norm = np.arange(len(y_norm))
+    spl = CubicSpline(x_norm, y_norm)
+    spl_dev = spl(x_norm, 1)
+
+
+    # get regions for indexing
+    idx_rise = [ i for i in range(len(spl_dev)) if (abs(spl_dev[i]) > cut_param) ]
+    idx_const = [ i for i in range(len(spl_dev)) if (abs(spl_dev[i]) < cut_param) ]
+
+    with warnings.catch_warnings():
+        warnings.filterwarnings('error')
+
+        try:
+            v_rise = v[ idx_rise[-6]:idx_rise[-1]+1 ]
+            v_const = v[ idx_const[1]:idx_const[-1]+1 ]
+            c_rise = c[ idx_rise[-6]:idx_rise[-1]+1 ]
+            c_const = c[ idx_const[1]:idx_const[-1]+1 ]
+
+            # line fits to each region
+            a_rise, b_rise = np.polyfit(v_rise, c_rise, 1)
+            a_const, b_const = np.polyfit(v_const, c_const, 1)
+
+            # full depletion via intersection
+            v_dep2 = (b_const - b_rise) / (a_rise - a_const)
+
+
+        except (ValueError, TypeError, IndexError):
+
+            print("The array seems empty. Try changing the cut_param parameter.")
+
+    return  v_dep2
 
 
 def parse_args():
