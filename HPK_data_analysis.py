@@ -4,8 +4,6 @@ import sys
 import argparse
 import numpy as np
 import glob
-from scipy.interpolate import CubicSpline
-import warnings
 import matplotlib.pyplot as plt
 
 
@@ -23,12 +21,39 @@ def make_dataframe_from_ascii(datafile, skip, max_row, quantity):
 
 
 def find_date(datafile):
+    
     f = open(datafile)
     lines = f.readlines()
     date = lines[6][6:]
 
     return date
 
+def find_avg_Rpoly(datafile):
+
+    if not 'PSP_' in datafile:
+        f = open(datafile, encoding='Latin-1')
+        lines = f.readlines()
+       
+        rpoly = lines[17][44:48]
+        if len(rpoly)>1:
+          return rpoly
+        else:
+          return 0
+    else:
+        return 0
+
+
+def find_batch_number(dirs):
+    
+   for d in dirs:
+        print(dirs)
+        #the following process is based on HPK standard ascii file names. If the latter changes then we need to modify the lines below
+
+        #batch_1 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(d)))[0].split('_')[2:3])
+        #batch_2 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(d)))[0].split('_')[4:])
+        #batch = batch_1 + '_' + batch_2  # this is actually the batch number
+        
+        return d
 
 
 def find_bad_strips(datafile):
@@ -80,16 +105,6 @@ def plot_scatter(x, y, color, label, title, bad_strips, sensors_reached_complian
 
 
 
-def plot_vfd(x, y, title):
-
-    plt.scatter(x, y, color='red')
-    plt.title("Batch {} Extracted Vfd from HPK data".format(title))
-    plt.ylabel('Full Depletion Voltage [V]')
-    plt.tick_params(axis='x', labelsize=7)
-    plt.xticks(rotation=90, ha='right')
-
-
-
 
 def plot_graph(x, y, yaxis, batch, marker, label, color):
 
@@ -131,15 +146,15 @@ def make_dictionary_with_currents(files):
     for f in files:
 
         #the following process is based on HPK standard ascii file names. If the latter changes then we need to modify the lines below
-
+        
         batch_1 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[2:3])
         batch_2 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[4:])
-        batch = batch_1 + '_' + batch_2  # this is actually the batch ID
+        
+        batch = batch_1 + '_' + batch_2  # this is actually the batch number
         sensor = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[3:4]) # this is the sensor ID (just the number for visualisation purposes)
 
         try:
             df = make_dataframe_from_ascii(f, 23, 51, 'Current')
-
             i600, i800, i1000, ratio = check_current(df)
 
             ratio_list.append(ratio)
@@ -166,23 +181,23 @@ def plot_IVCV(files):
     batch = index = marker_index = 0
     capacitance_dict={}
     current_dict = {}
-    vfd_dict = {}
-
 
 
     for f in files:
 
-        find_date(f)
+       
         #the following process is based on HPK standard ascii file names. If the latter changes then we need to modify the lines below
         os.path.basename(os.path.normpath(f))
         batch_1 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[2:3])
         batch_2 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[4:])
+        print(batch_1)
+        print(batch_2)
         batch = batch_1 + '_' + batch_2  # this is actually the batch ID
         sensor = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[3:4]) # this is the sensor ID (just the number for visualisation purposes)
 
         try:
             df1 = make_dataframe_from_ascii(f, 23, 51, 'Current')
-            df2 = make_dataframe_from_ascii(f, 76, 41, 'Capacitance')
+            df2 = make_dataframe_from_ascii(f, 76, 40, 'Capacitance')
 
             current_dict.update({sensor: (df1['Current']*1e9).values})
             capacitance_dict.update({sensor: (1/df2['Capacitance']**2).values})
@@ -193,14 +208,8 @@ def plot_IVCV(files):
             iv_voltages = df1['Voltage'].values
             cv_voltages= df2['Voltage'].values
 
-
-            v_fd = analyse_cv(cv_voltages, (1/df2['Capacitance']**2).values)
-            vfd_dict.update({sensor: v_fd})
-
-
         except Exception as e:
             print(e)
-
 
     for sensor,current in current_dict.items():
 
@@ -225,13 +234,6 @@ def plot_IVCV(files):
              marker_index +=1
 
     plt.savefig("CV_{}.png".format(batch))
-    plt.clf()
-
-    for sensor, vfd in vfd_dict.items():
-
-        plot_vfd(sensor, vfd, batch)
-
-    plt.savefig("Vfd_{}.png".format(batch))
 
 
 
@@ -245,6 +247,7 @@ def plot_currents_per_batch(i_dict, batch, total_bad_strips):
     plot_scatter(i_dict.keys(), i8, 'blue', 'I@800V', batch,total_bad_strips, sensors_reached_compliance)
     plot_scatter(i_dict.keys(), i10, 'green', 'I@1000V', batch, total_bad_strips, sensors_reached_compliance)
     # plot_distribution(i600_list, 'Current@600V')
+   
     plt.savefig(batch + '.png')
 
 
@@ -260,46 +263,15 @@ def find_compliance(i_dict):
     return sensors_reached_compliance
 
 
-def analyse_cv(v, c, cut_param=0.004, debug=False):
+def do_the_plots(files):
 
-    # init
-    v_dep2 = -1
+  plot_IVCV(files)
+  plt.clf()
 
-
-
-    # get spline fit, requires strictlty increasing array
-    y_norm = c / np.max(c)
-    x_norm = np.arange(len(y_norm))
-    spl = CubicSpline(x_norm, y_norm)
-    spl_dev = spl(x_norm, 1)
-
-
-    # get regions for indexing
-    idx_rise = [ i for i in range(len(spl_dev)) if (abs(spl_dev[i]) > cut_param) ]
-    idx_const = [ i for i in range(len(spl_dev)) if (abs(spl_dev[i]) < cut_param) ]
-
-    with warnings.catch_warnings():
-        warnings.filterwarnings('error')
-
-        try:
-            v_rise = v[ idx_rise[-6]:idx_rise[-1]+1 ]
-            v_const = v[ idx_const[1]:idx_const[-1]+1 ]
-            c_rise = c[ idx_rise[-6]:idx_rise[-1]+1 ]
-            c_const = c[ idx_const[1]:idx_const[-1]+1 ]
-
-            # line fits to each region
-            a_rise, b_rise = np.polyfit(v_rise, c_rise, 1)
-            a_const, b_const = np.polyfit(v_const, c_const, 1)
-
-            # full depletion via intersection
-            v_dep2 = (b_const - b_rise) / (a_rise - a_const)
-
-
-        except (ValueError, TypeError, IndexError):
-
-            print("The array seems empty. Try changing the cut_param parameter.")
-
-    return  v_dep2
+  i_dict, batch, total_bad_strips, ratio_list, i600_list = make_dictionary_with_currents(files)
+  plot_currents_per_batch(i_dict, batch, total_bad_strips)
+  i_dict.clear()
+  plt.clf()
 
 
 def parse_args():
@@ -314,20 +286,35 @@ def parse_args():
 def main():
 
     args = parse_args()
+    
+
 
     for subdirs, dirs, files in os.walk(args.path):
-
+     
+      
       if len(dirs)>1:
          for dir in dirs:
+          
             path = args.path  + os.sep +  dir
-            files = glob.glob(path + os.sep + '*.txt')
-            plot_IVCV(files)
-            plt.clf()
-
-            i_dict, batch, total_bad_strips, ratio_list, i600_list = make_dictionary_with_currents(files)
-            plot_currents_per_batch(i_dict, batch, total_bad_strips)
-            i_dict.clear()
-            plt.clf()
+         
+            txt_files = glob.glob(path + os.sep +  '**' + os.sep + '*.txt', recursive=True)
+            right_files = []
+            left_files =[]
+            
+            if '2-S' in txt_files[0]:
+               do_the_plots(txt_files)
+             
+            else: 
+               for f in txt_files:
+                  if 'MAINL' in f:
+                     left_files.append(f)
+                  else:
+                     right_files.append(f)
+        
+               do_the_plots(left_files)
+               do_the_plots(right_files)
+                
+           
 
 
 
@@ -336,14 +323,9 @@ def main():
            # this condition verifies that there is no extra run for the lines below; this can happen due to subdirs itteration
 
             path = args.path
-            files = glob.glob( path + os.sep+ '*.txt')
-            plot_IVCV(files)
-            plt.clf()
-
-            i_dict, batch, total_bad_strips, ratio_list, i600_list = make_dictionary_with_currents(files)
-            plot_currents_per_batch(i_dict, batch, total_bad_strips)
-            i_dict.clear()
-            plt.clf()
+           
+            txt_files = glob.glob(path + os.sep +  '**' + os.sep + '*.txt', recursive=True)
+            do_the_plots(txt_files)
 
 
 
