@@ -5,6 +5,8 @@ import argparse
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline
+import warnings
 
 
 colors = ['red', 'gold', 'darkgreen', 'deepskyblue', 'black', 'blue', 'm', 'grey', 'coral', 'violet',
@@ -112,7 +114,6 @@ def plot_vfd(x, y, title):
     plt.tick_params(axis='x', labelsize=7)
     plt.xticks(rotation=90, ha='right')
     
-    
 
 def plot_graph(x, y, yaxis, batch, marker, label, color):
 
@@ -189,6 +190,7 @@ def plot_IVCV(files):
     batch = index = marker_index = 0
     capacitance_dict={}
     current_dict = {}
+    vfd_dict = {}
 
 
     for f in files:
@@ -215,6 +217,9 @@ def plot_IVCV(files):
 
             iv_voltages = df1['Voltage'].values
             cv_voltages= df2['Voltage'].values
+            
+            v_fd = analyse_cv(cv_voltages, (1/df2['Capacitance']**2).values)
+            vfd_dict.update({sensor: v_fd})
 
         except Exception as e:
             print(e)
@@ -242,6 +247,8 @@ def plot_IVCV(files):
              marker_index +=1
 
     plt.savefig("CV_{}.png".format(batch))
+    
+    plt.clf()
     
     for sensor, vfd in vfd_dict.items():
 
@@ -275,7 +282,6 @@ def find_compliance(i_dict):
                sensors_reached_compliance.append(key)
 
     return sensors_reached_compliance
-
 
 def analyse_cv(v, c, cut_param=0.004, debug=False):
 
@@ -317,8 +323,8 @@ def analyse_cv(v, c, cut_param=0.004, debug=False):
             print("The array seems empty. Try changing the cut_param parameter.")
 
     return  v_dep2
-
-
+    
+    
 def do_the_plots(files):
 
   plot_IVCV(files)
