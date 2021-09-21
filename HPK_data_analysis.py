@@ -95,14 +95,14 @@ def plot_distribution(data, xlabel, batch):
 
 
 
-def plot_scatter(x, y, color, label, title, bad_strips, sensors_reached_compliance):
+def plot_scatter(x, y, color, label, title, bad_strips, sensors_reached_compliance, sensors_with_large_ratio):
     plt.scatter(x,y, color=color, label = label)
     plt.title("Batch {} HPK measured currents".format(title))
     plt.ylabel('Current [nA]')
     plt.tick_params(axis='x', labelsize=7)
     plt.xticks(rotation=90, ha='right')
     plt.legend(loc='best', fontsize=7)
-    annotate = 'Total bad strips : {} \nSensors with breakdown: {}'.format(bad_strips, sensors_reached_compliance)
+    annotate = 'Total bad strips : {} \nSensors with breakdown: {} \nSensors with i800/i600 beyond the limit: {} '.format(bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
     plt.annotate(annotate, (0.25, 0.65), xycoords='figure fraction', color='black')
 
 
@@ -149,7 +149,7 @@ def make_dictionary_with_currents(files):
     i_dict = {}
     batch = 0
     total_bad_strips=0
-    ratio_list=[]
+    ratio_dict={}
     i600_list =[]
 
     for f in files:
@@ -166,7 +166,7 @@ def make_dictionary_with_currents(files):
             df = make_dataframe_from_ascii(f, 23, 51, 'Current')
             i600, i800, i1000, ratio = check_current(df)
 
-            ratio_list.append(ratio)
+            ratio_dict.update({sensor: ratio})
             i_dict.update({sensor: [i600, i800, i1000]})
             total_bad_strips += int(find_bad_strips(f))
 
@@ -179,7 +179,7 @@ def make_dictionary_with_currents(files):
 
     i_dict = dict(sorted(i_dict.items()))
 
-    return i_dict, batch, total_bad_strips, ratio_list, i600_list
+    return i_dict, batch, total_bad_strips, ratio_dict, i600_list
 
 
 
@@ -258,18 +258,31 @@ def plot_IVCV(files):
 
 
 
-def plot_currents_per_batch(i_dict, batch, total_bad_strips):
+def plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict):
 
     i6 = [i[0] for i in i_dict.values()]
     i8 = [i[1] for i in i_dict.values()]
     i10 = [i[2] for i in i_dict.values()]
     sensors_reached_compliance = find_compliance(i_dict)
-    plot_scatter(i_dict.keys(), i6, 'red', 'I@600V', batch,total_bad_strips, sensors_reached_compliance)
-    plot_scatter(i_dict.keys(), i8, 'blue', 'I@800V', batch,total_bad_strips, sensors_reached_compliance)
-    plot_scatter(i_dict.keys(), i10, 'green', 'I@1000V', batch, total_bad_strips, sensors_reached_compliance)
+    sensors_with_large_ratio = find_sensors_with_large_ratio(ratio_dict)
+    plot_scatter(i_dict.keys(), i6, 'red', 'I@600V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
+    plot_scatter(i_dict.keys(), i8, 'blue', 'I@800V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
+    plot_scatter(i_dict.keys(), i10, 'green', 'I@1000V', batch, total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
     # plot_distribution(i600_list, 'Current@600V')
    
     plt.savefig(batch + '.png')
+
+
+def find_sensors_with_large_ratio(ratio_dict):
+
+  list_with_sensors = []
+  for sensor, ratio in ratio_dict.items():
+        print(ratio)
+        if ratio>=2.5:
+           list_with_sensors.append(sensor)
+           
+  return list_with_sensors
+  
 
 
 def find_compliance(i_dict):
@@ -282,6 +295,9 @@ def find_compliance(i_dict):
                sensors_reached_compliance.append(key)
 
     return sensors_reached_compliance
+
+
+
 
 def analyse_cv(v, c, cut_param=0.004, debug=False):
 
@@ -330,8 +346,8 @@ def do_the_plots(files):
   plot_IVCV(files)
   plt.clf()
 
-  i_dict, batch, total_bad_strips, ratio_list, i600_list = make_dictionary_with_currents(files)
-  plot_currents_per_batch(i_dict, batch, total_bad_strips)
+  i_dict, batch, total_bad_strips, ratio_dict, i600_list = make_dictionary_with_currents(files)
+  plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict)
   i_dict.clear()
   plt.clf()
 
