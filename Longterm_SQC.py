@@ -9,6 +9,7 @@ import holoviews as hv
 from bokeh.io import  output_file, show
 from bokeh.models import LinearAxis, Range1d
 from bokeh.models.renderers import GlyphRenderer
+from pretty_html_table import build_table
 
 
 hv.extension('bokeh')
@@ -17,9 +18,9 @@ hv.extension('bokeh')
 
 def make_dataframe_from_ascii(datafile, skip):
 
-    data = np.genfromtxt(datafile, skip_header=skip, delimiter=",", encoding = 'latin-1')
+    data = np.genfromtxt(datafile, skip_header=skip, delimiter=",") #max_rows = 
 
-    df = pd.DataFrame(data, columns= ['Timestamp', 'Voltage', 'Current', 'smu_current', 'pt100', 'cts_temp', 'cts_humi', 'cts_status', 'cts_program', 'hv_status'])
+    df = pd.DataFrame(data, columns= ['Timestamp', 'Voltage', 'Current', 'pt100', 'cts_temp', 'cts_humi', 'cts_status', 'cts_program', 'hv_status']) #'smu_current [A]'
 
     return df
 
@@ -30,10 +31,11 @@ def plot_Ivstime(df, label, color, style):
 
     df['Current'] = (df['Current'].abs())*1e9
 
-
+ 
     df1 = pd.DataFrame({'Time [h]': df['Timestamp'].divide(3600), 'Current [nA]': df['Current'].values})
     plot = (hv.Curve(df1, label=label)).opts(width=800, height = 600, title = 'Current over time', fontsize={'title': 15, 'labels': 14, 'xticks': 12, 'yticks': 12})
-
+    
+   
     return plot
 
 
@@ -42,6 +44,8 @@ def plot_IV(df, label, color):
     # plot the IV
 
     df1 = pd.DataFrame({'Voltage [V]': df['Voltage'].abs(), 'Current [nA]': ((df['Current'].abs())*1e9).values})
+ 
+    
     plot = (hv.Curve(df1, label=label)).opts(width=800, height=600, title='IV curve',
                                              fontsize={'title': 15, 'labels': 14, 'xticks': 12, 'yticks': 12})
 
@@ -78,35 +82,28 @@ def plot_temp_humi(df):
     return plot
 
 
-
-def find_time_temperature(df):
-
-    time_list = []
-    df['Timestamp'] = df['Timestamp'].divide(3600)
-    for n in range(5):
-      temp = df['cts_temp'][0] + n*7.0
-      a = df.loc[(df['cts_temp']<= temp+0.1) & (df['cts_temp']>= temp-0.1)]
-      time_list.append(a['Timestamp'].values[0])
-
-    return time_list
+def find_relative_deviation(df):
 
 
+    relative_deviation = np.abs(100*(df['Current'].std())/(df['Current'].mean()))
+    if relative_deviation<5.0:
+        status='OK'
+    else:
+        status = 'Noisy'
+        
+    return relative_deviation, status
+    
 
-def find_current_at_humi_level(df):
-    # useless function, the idea is to create lists containing the currents which correspond to some particular humidity values
+def make_table_with_LT_results(df):
 
-    current = df['Current']
-    humi = df['cts_humi']
-    i_30rh= []
-    i_40rh = []
-    i_50rh = []
-    i_60rh = []
-    i_30rh.append(df['Current'].loc[(29.0< df['cts_humi']) & (df['cts_humi']<31.0)].values[0])
-    i_40rh.append(df['Current'].loc[(39.0< df['cts_humi']) &  (df['cts_humi']<41.0)].values[0])
-    i_50rh.append(df['Current'].loc[(49.0 < df['cts_humi']) & (df['cts_humi'] <51.0)].values[0])
-    i_60rh.append(df['Current'].loc[(59.0<df['cts_humi'])   & (df['cts_humi']<61.0)].values[0])
 
-    print(i_30rh, i_40rh,  i_50rh,  i_60rh)
+   html_table_blue_light = build_table(df, 'blue_light', text_align='center')
+   with open('LT_status_table.html', 'w') as f:
+       f.write("<html><body> <h1>LongTerm test Status <font color = #4000FF>{}</font></h1>\n</body></html>")
+       f.write("\n")
+       f.write(html_table_blue_light)
+       
+
 
 
 def return_current(df):
@@ -139,12 +136,14 @@ def create_list_with_plots(files):
     index_iv = 0
 
     colors = make_color_list()
+   
     plot_iv_list = []
     plot_it_list = []
 
     df = pd.DataFrame({})
     df1 = pd.DataFrame({})
-
+    LT_list=[]
+   
     for f in files:
 
         file = f.split(os.sep)[-1]
@@ -156,7 +155,14 @@ def create_list_with_plots(files):
             index_it += 1
 
             df = make_dataframe_from_ascii(f, 9)
+            
+            relative_deviation, status = find_relative_deviation(df)
+            LT_list.append([sensor, round(relative_deviation,2), status])
+            
+            print('The relative deviation of sensor {} is: {} %'.format(sensor, round(relative_deviation,2)))
+            
             plot_it_list.append(plot_Ivstime(df, sensor, colors[index_it], '-'))
+            
 
 
 
@@ -165,7 +171,13 @@ def create_list_with_plots(files):
 
             df1 = make_dataframe_from_ascii(f, 9)
             plot_iv_list.append(plot_IV(df1, sensor, colors[index_iv]))
-
+    
+    
+    
+    dataframe = pd.DataFrame(data = LT_list, columns=['Sensor', 'Leakage Current relative deviation [%]', 'Status'])
+    make_table_with_LT_results(dataframe)
+    
+    
     return plot_it_list, plot_iv_list, df, df1
 
 
@@ -206,20 +218,20 @@ def create_bookeh_plots(plot_it_list, plot_iv_list, df, fig_index):
        IV_plot.opts(legend_position='top_right')
        IV_plot.opts(norm={'axiswise': False})
 
+      
        humi = plot_temp_humi(df)
        new_plot2 = hv.Layout( IV_plot+ humi + new_plot).cols(1)
        new_plot2.opts(shared_axes=False)
        renderer = hv.renderer('bokeh')
-       renderer.save(new_plot2, 'fig1.html')
+       renderer.save(new_plot2, 'LT_figures')
 
        final_plot = renderer.get_plot(new_plot2).state
-       output_file("fig{}.html".format(fig_index))
-       show(final_plot)#, gridplot(children = humi, ncols = 1, merge_tools = False))
+      
+       #show(final_plot)#, gridplot(children = humi, ncols = 1, merge_tools = False))
 
 
        plot_iv_list.clear()
-       index_it = 0
-       index_iv = 0
+      
 
 
 
