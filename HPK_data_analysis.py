@@ -200,8 +200,7 @@ def plot_IVCV(files):
         os.path.basename(os.path.normpath(f))
         batch_1 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[2:3])
         batch_2 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[4:])
-        print(batch_1)
-        print(batch_2)
+        
         batch = batch_1 + '_' + batch_2  # this is actually the batch ID
         sensor = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[3:4]) # this is the sensor ID (just the number for visualisation purposes)
 
@@ -277,7 +276,7 @@ def find_sensors_with_large_ratio(ratio_dict):
 
   list_with_sensors = []
   for sensor, ratio in ratio_dict.items():
-        print(ratio)
+        
         if ratio>=2.5:
            list_with_sensors.append(sensor)
            
@@ -372,25 +371,28 @@ def main():
       
       if len(dirs)>1:
          for dir in dirs:
-          
-            path = args.path  + os.sep +  dir
-         
+            
+            path = args.path  + os.sep + dir 
+            
             txt_files = glob.glob(path + os.sep +  '**' + os.sep + '*.txt', recursive=True)
+           
             right_files = []
             left_files =[]
             
-            if '2-S' in txt_files[0]:
-               do_the_plots(txt_files)
+            if len(txt_files)>1: # trick to skip the empty files that are generated in the PS-s/PS-p case
+               if '2-S' in txt_files[0]:
+                  do_the_plots(txt_files)
              
-            else: 
-               for f in txt_files:
-                  if 'MAINL' in f:
+               else: 
+                 for f in txt_files:
+                  
+                    if 'MAINL' in f:
                      left_files.append(f)
-                  else:
+                    else:
                      right_files.append(f)
-        
-               do_the_plots(left_files)
-               do_the_plots(right_files)
+                  
+                 do_the_plots(left_files)
+                 do_the_plots(right_files)
                 
            
 
@@ -402,7 +404,7 @@ def main():
 
             path = args.path
            
-            txt_files = glob.glob(path + os.sep +  '**' + os.sep + '*.txt', recursive=True)
+            txt_files = glob.glob(path + os.sep + dir + os.sep  + '**' + os.sep + '*.txt', recursive=True)
             do_the_plots(txt_files)
 
 
