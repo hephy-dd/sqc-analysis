@@ -151,9 +151,13 @@ def make_dictionary_with_currents(files):
     total_bad_strips=0
     ratio_dict={}
     i600_list =[]
-
+    compliance = 0
+    sensors_with_compliance = []
+    
+   # print(files)
     for f in files:
 
+        
         #the following process is based on HPK standard ascii file names. If the latter changes then we need to modify the lines below
         
         batch_1 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(f)))[0].split('_')[2:3])
@@ -171,15 +175,22 @@ def make_dictionary_with_currents(files):
             total_bad_strips += int(find_bad_strips(f))
 
             i600_list.append(i600)
-
-
+            #print(i_dict)
+            sensors_with_compliance = find_compliance(i_dict)
+            
+            compliance = len(sensors_with_compliance)
 
         except Exception as e:
             print(e)
 
     i_dict = dict(sorted(i_dict.items()))
-
-    return i_dict, batch, total_bad_strips, ratio_dict, i600_list
+   
+    if len(sensors_with_compliance)>=1:
+        
+       
+        compliance = len(sensors_with_compliance)
+        
+    return i_dict, batch, total_bad_strips, ratio_dict, i600_list, compliance
 
 
 
@@ -219,6 +230,7 @@ def plot_IVCV(files):
             
             v_fd = analyse_cv(cv_voltages, (1/df2['Capacitance']**2).values)
             vfd_dict.update({sensor: v_fd})
+            vfd_dict = dict(sorted(vfd_dict.items()))
 
         except Exception as e:
             print(e)
@@ -345,7 +357,10 @@ def do_the_plots(files):
   plot_IVCV(files)
   plt.clf()
 
-  i_dict, batch, total_bad_strips, ratio_dict, i600_list = make_dictionary_with_currents(files)
+  
+  i_dict, batch, total_bad_strips, ratio_dict, i600_list, compliance = make_dictionary_with_currents(files)
+ 
+  
   plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict)
   i_dict.clear()
   plt.clf()
@@ -372,30 +387,42 @@ def main():
       if len(dirs)>1:
          for dir in dirs:
             
-            path = args.path  + os.sep + dir 
             
-            txt_files = glob.glob(path + os.sep +  '**' + os.sep + '*.txt', recursive=True)
-           
-            right_files = []
-            left_files =[]
+            path = args.path + os.sep + dir 
             
-            if len(txt_files)>1: # trick to skip the empty files that are generated in the PS-s/PS-p case
-               if '2-S' in txt_files[0]:
-                  do_the_plots(txt_files)
+            
+            def process_ascii_files_before_plot(txt_files):
+              right_files = []
+              left_files =[]
+            
+              if len(txt_files)>=1: # trick to skip the empty files that are generated in the PS-s/PS-p case
+                if '2-S' in txt_files[0]:
+                   do_the_plots(txt_files)
              
-               else: 
-                 for f in txt_files:
+                else: 
+                   for f in txt_files:
                   
-                    if 'MAINL' in f:
-                     left_files.append(f)
-                    else:
-                     right_files.append(f)
-                  
-                 do_the_plots(left_files)
-                 do_the_plots(right_files)
+                     if 'MAINL' in f:
+                       left_files.append(f)
+                     else:
+                       right_files.append(f)
+             
+                   if len(left_files)>1:                 
+                      do_the_plots(left_files)
+                   if len(right_files)>1:
+                      do_the_plots(right_files)
                 
            
-
+            
+            pss_path = glob.glob(path + os.sep +  '**' + os.sep)
+            if len(pss_path)>1:
+               for p in pss_path:
+                  txt_files = glob.glob(p + os.sep + '*.txt', recursive=True)
+                  process_ascii_files_before_plot(txt_files)
+                  
+            else:
+                txt_files = glob.glob(path + os.sep +  '**' + os.sep + '*.txt', recursive=True)          
+                process_ascii_files_before_plot(txt_files)            
 
 
       else:
