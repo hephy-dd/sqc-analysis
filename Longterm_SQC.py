@@ -18,9 +18,9 @@ hv.extension('bokeh')
 
 def make_dataframe_from_ascii(datafile, skip):
 
-    data = np.genfromtxt(datafile, skip_header=skip, delimiter=",") #max_rows = 
+    data = np.genfromtxt(datafile, skip_header=skip, delimiter=",", encoding='latin-1') 
 
-    df = pd.DataFrame(data, columns= ['Timestamp', 'Voltage', 'Current', 'pt100', 'cts_temp', 'cts_humi', 'cts_status', 'cts_program', 'hv_status']) #'smu_current [A]'
+    df = pd.DataFrame(data, columns= ['Timestamp', 'Voltage', 'Current', 'smu_current [A]', 'pt100', 'cts_temp', 'cts_humi', 'cts_status', 'cts_program', 'hv_status']) #'smu_current [A]'
 
     return df
 
@@ -33,7 +33,7 @@ def plot_Ivstime(df, label, color, style):
 
  
     df1 = pd.DataFrame({'Time [h]': df['Timestamp'].divide(3600), 'Current [nA]': df['Current'].values})
-    plot = (hv.Curve(df1, label=label)).opts(width=800, height = 600, title = 'Current over time', fontsize={'title': 15, 'labels': 14, 'xticks': 12, 'yticks': 12})
+    plot = (hv.Curve(df1, label=label)).opts(width=800, height = 600, line_width=5, title = 'Current over time', fontsize={'title': 15, 'labels': 14, 'xticks': 12, 'yticks': 12})#, ylim=(0, 150)
     
    
     return plot
@@ -46,7 +46,7 @@ def plot_IV(df, label, color):
     df1 = pd.DataFrame({'Voltage [V]': df['Voltage'].abs(), 'Current [nA]': ((df['Current'].abs())*1e9).values})
  
     
-    plot = (hv.Curve(df1, label=label)).opts(width=800, height=600, title='IV curve',
+    plot = (hv.Curve(df1, label=label)).opts(width=800, height=600, line_width=3, title='IV curve',
                                              fontsize={'title': 15, 'labels': 14, 'xticks': 12, 'yticks': 12})
 
     return plot
@@ -57,7 +57,7 @@ def plot_IV(df, label, color):
 def plot_temp_humi(df):
 
     df['Timestamp'] = df['Timestamp'].divide(3600)
-    df_temp = pd.DataFrame({'Time [h]': df.get('Timestamp'), 'Temperature [\u00B0C]': df.get('cts_temp').values})
+    df_temp = pd.DataFrame({'Time [h]': df.get('Timestamp'), 'Temperature [\u00B0C]': df.get('pt100').values})
     df_humi = pd.DataFrame({'Time [h]': df.get('Timestamp'), 'Rel. Humidity [%]': df.get('cts_humi').values})
 
 
@@ -85,8 +85,9 @@ def plot_temp_humi(df):
 def find_relative_deviation(df):
 
 
-    relative_deviation = np.abs(100*(df['Current'].std())/(df['Current'].mean()))
-    if relative_deviation<5.0:
+    relative_deviation = np.abs(100*(df['Current'].max() - df['Current'].min())/(df['Current'].mean()))
+   
+    if relative_deviation<30.0:
         status='OK'
     else:
         status = 'Noisy'
@@ -152,9 +153,10 @@ def create_list_with_plots(files):
             os.path.splitext(sensor)[0].split('-')[1:2])
 
         if "it" in f:
+            
             index_it += 1
 
-            df = make_dataframe_from_ascii(f, 9)
+            df = make_dataframe_from_ascii(f, 185) #185
             
             relative_deviation, status = find_relative_deviation(df)
             LT_list.append([sensor, round(relative_deviation,2), status])
@@ -167,6 +169,7 @@ def create_list_with_plots(files):
 
 
         elif "IV" in f:
+          
             index_iv += 1
 
             df1 = make_dataframe_from_ascii(f, 9)
@@ -185,8 +188,8 @@ def create_list_with_plots(files):
 def main():
 
     args = parse_args()
-
-    fig_index = 0
+    
+    fig_index=0
     for subdir, dirs, files in os.walk(args.path):
 
        if len(dirs)>=1:
@@ -212,10 +215,10 @@ def main():
 def create_bookeh_plots(plot_it_list, plot_iv_list, df, fig_index):
 
        new_plot = hv.Overlay(plot_it_list)
-       new_plot.opts(legend_position='bottom_right')
+       new_plot.opts(legend_position='right')
        new_plot.opts(norm={'axiswise': False})
        IV_plot = hv.Overlay(plot_iv_list)
-       IV_plot.opts(legend_position='top_right')
+       IV_plot.opts(legend_position='right')
        IV_plot.opts(norm={'axiswise': False})
 
       
