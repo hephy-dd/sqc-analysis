@@ -22,7 +22,7 @@ class runs:
 
     def make_runs_list(self):
 
-        with open('data_old/runs.json') as f:
+        with open('data/runs.json') as f:
 
             runs_list = json.load(f)
 
@@ -72,7 +72,7 @@ class IV(runs):
 
         ## opens and reads the json file and creates a list of data
 
-        with open('data_old/IV.json') as f:
+        with open('data/IV.json') as f:
 
             iv_list = json.load(f)
 
@@ -369,7 +369,7 @@ class strip_parameter(runs):
   def make_list(self):
 
 
-       with open('data_old/{}.json'.format(self.parameter)) as f:
+       with open('data/{}.json'.format(self.parameter)) as f:
 
             parameter_list = json.load(f)
 
