@@ -22,7 +22,7 @@ class runs:
 
     def make_runs_list(self):
 
-        with open('data/runs.json') as f:
+        with open('data_old/runs.json') as f:
 
             runs_list = json.load(f)
 
@@ -172,29 +172,47 @@ class IV(runs):
 
 
 
-    def plot_i600_over_time(self, df):
+    def plot_itot_over_time(self, df, label):
 
-        ## plots the scaled current at -600V over batch number
+
+        ## plots the scaled current at -600(-800) V over batch number
+        '''
+        a = df.groupby('Sensor').count().to_dict(orient='dict')['Run_number']
+        only_hpk=0
+        both = 0
+        for key, value in a.items():
+            #print(value)
+            if value==1:
+                only_hpk +=1
+            elif value>=2:
+                both +=1
+        '''
 
         batch = list(dict.fromkeys(df['Batch']))
-
+        df = df.loc[df['I_scaled']>10]
         fig, ax = plt.subplots()
         sns.scatterplot(data = df, x='Batch', y='I_scaled', hue='Sensor_type', s=25, linewidth=0, ax=ax)
-    
+         
         plt.xticks(batch, batch, rotation=90, va='top', fontsize = 6)
         plt.locator_params(axis='x', nbins=len(batch)/4)
         ax.set(xlabel=None)
 
         plt.axvline(x=22, linestyle='dashed', color='black')
+        plt.axhline(y = 3125, linestyle ='dashed', color='blue')
+        
+        plt.axhline(y = 7250, linestyle ='dashed', color='orange')
+        plt.text(26, 2000, 'PS-s/PS-p limit', color = 'blue', style ='italic', fontsize = 12)
+       
+        plt.text(26, 8500, '2-S limit', color = 'orange', style ='italic', fontsize = 12)
         plt.text(26, 1000, 'Production Period', style ='italic')
         plt.yscale('log')
 
-        plt.figtext(0.5, 0.01, r'Time evolution $\longrightarrow$', fontsize=10, fontweight='bold')
-        ax.set_ylabel('Total Current@-600V [nA]', fontsize = 10, fontweight='bold')
+        plt.figtext(0.4, 0.01, r'Time evolution $\longrightarrow$', fontsize=10, fontweight='bold')
+        ax.set_ylabel('Total Current@-{} V [nA]'.format(label), fontsize = 12, fontweight='bold')
 
         plt.legend(loc='best')
         #plt.show()
-        plt.savefig('figures/i600_type.png')
+        plt.savefig('figures/i_{}_sensor_type.png'.format(label))
 
                         
 
@@ -204,15 +222,19 @@ class IV(runs):
 
         self.df = self.make_dataframe()
         i600_df = self.filter_dataframe(self.df, 599, 601)
-        df_final = self.find_sensor_type(i600_df)    
-        df_final = self.find_batch(df_final)
-        df_final = self.scale_current(df_final)
+                 
+        i800_df = self.filter_dataframe(self.df, 799, 801)
         
-        self.make_table_with_outliers(df_final)
-
-        self.plot_i600_over_time(df_final)
+        for df, label in ((i600_df, '600'), (i800_df, '800')):
+           df_final = self.find_sensor_type(df)    
+           df_final = self.find_batch(df_final)
+           df_final = self.scale_current(df_final)
         
-        return df_final
+           self.make_table_with_outliers(df_final)
+           print(df)
+           self.plot_itot_over_time(df_final, label)
+        
+        
 
 
 ##############################################################################################################################################
@@ -260,11 +282,8 @@ class CV(runs):
       v_dep2 = -1
 
       c = [1/i**2 for i in c]
-      print(c)
-      #c = [1/c**2 for i in c]
+    
 
-      #print(v)
-      #print(c)
 
       # get spline fit, requires strictlty increasing array
       y_norm = c/np.max(c)
@@ -442,7 +461,7 @@ class strip_parameter(runs):
 
     else:
 
-          bad_strips_df = df.loc[df[self.parameter]>self.config_file['SQC_parameters'][self.parameter]['Limit']]
+          bad_strips_df = df.loc[df[self.parameter].abs()>self.config_file['SQC_parameters'][self.parameter]['Limit']]
 
  
     
@@ -555,15 +574,25 @@ class strip_parameter(runs):
 
 
 
-  def plot_distribution(self, df):
+  def plot_distribution(self, df, selection, y_label):
 
+    from matplotlib.patches import Rectangle
+
+    df[self.parameter] = df[self.parameter].abs()
+
+    df = df.loc[(df[self.parameter]<3*df[self.parameter].median()) & (df[self.parameter]>0.5*df[self.parameter].median())]
+      
     fig, ax = plt.subplots()
 
-    plt.hist(df[self.parameter], bins=30, color='blue', edgecolor='black', linewidth=1.2)
+
+    plt.hist(df[self.parameter], bins=40, color='blue', edgecolor='black', linewidth=1.2)
     ax.set_xlabel('{}'.format(self.config_file['SQC_parameters'][self.parameter]['label']), fontsize=10, fontweight='bold')
-    ax.set_ylabel('Number of sensors', fontsize= 10, fontweight='bold')
-    
-    plt.savefig('figures/{}.png'.format(self.parameter))
+    ax.set_ylabel('Number of {}'.format(y_label), fontsize= 10, fontweight='bold')
+    extra = Rectangle((0,0), 1, 1, fc='w', fill=False, edgecolor='none', linewidth=0)
+    label = 'Specs: {} {}'.format(self.parameter, self.config_file['SQC_parameters'][self.parameter]['annotation'])
+    leg = plt.legend([extra], [label], frameon=False, loc='best')
+
+    plt.savefig('figures/{}_{}.png'.format(self.parameter, selection))
 
 
 
@@ -571,10 +600,10 @@ class strip_parameter(runs):
   def run(self):
 
       attributes_list = [self.find_sensor_type, self.find_batch, self.find_location, self.normalize_data]
-    
+      
+      
       df = self.make_dataframe()
-      #df = self.find_sensor_type(df)
-      #df = self.find_batch(df)
+    
       
       for attr in attributes_list:
           
@@ -582,13 +611,24 @@ class strip_parameter(runs):
     
 
       self.find_bad_strip(df)
-      df = self.dataframe_with_median(df)
-
-     
+    
 
       print(df) 
-      self.make_html_table_with_outliers(df)
-      self.plot_distribution(df)
+      for i in ('all_strips', 'only_medians'):
+          
+          y_label = 'strips' # used for the y label of the histogram
+    
+          if i == 'only_medians':
+                      
+             df = self.dataframe_with_median(df)
+          
+             self.make_html_table_with_outliers(df) # only for medians
+          
+             y_label = 'sensors'
+          
+
+          
+          self.plot_distribution(df, i, y_label)
 
 
 
@@ -596,8 +636,7 @@ class strip_parameter(runs):
 
 
 try:
-    os.mkdir("figures")
-
+   os.mkdir('figures')
 except FileExistsError:
     print("Directory figures/ already exists")
 
