@@ -26,67 +26,61 @@ SQC_parameters:
   Istrip:
      table_headers: ['SENSOR', 'STRIP', 'CURRNT_NAMPR', 'RUN_NUMBER']
      sql_table_prefix: is
-     unit: 'nA'
      factor_2-S: 5
      factor_PSS: 2.5 
      Limit: 10
      label: 'Strip Current [nA/cm]'
-
+     annotation: '< 10 nA/cm'
 
 
   Rpoly:
      table_headers: ['SENSOR', 'STRIP', 'RESSTNC_MOHM', 'RUN_NUMBER']
      sql_table_prefix: rs
-     unit: 'MOhm'
      factor_2-S: 1
      factor_PSS: 1
      Limit: 1.5
      label: 'Polysilicon Resistance [MOhm]'
-
+     annotation: '1.5 +/- 0.5 MOhm'
 
 
 
   Cac:
      table_headers: ['SENSOR', 'STRIP', 'CAPCTNC_PFRD', 'RUN_NUMBER']
      sql_table_prefix: cs
-     unit: 'pF'
      factor_2-S: 112.5
      factor_PSS: 62.5
      Limit: 1.2
      label: 'Coupling Capacitance [pF/(cm*um)]'
-
+     annotation: '> 1.2 pF/(cm*um)'
 
 
   Idiel:
      table_headers: ['SENSOR', 'STRIP', 'CURRNTPH_NAMP', 'RUN_NUMBER']
      sql_table_prefix: phs
-     unit: 'nA'
      factor_2-S: 1
      factor_PSS: 1
      Limit: 10
      label: 'Dielectric Current [nA/cm]'
-
+     annotation: '< 10 nA@10V'
 
 
 
   Cint:
      table_headers: ['SENSOR', 'STRIPCOUPLE', 'CAPCTNC_PFRD', 'RUN_NUMBER']
      sql_table_prefix: cis
-     unit: 'pF'
      factor_2-S: 5
      factor_PSS: 2.5
      Limit: 0.5
      label: 'Inter-strip Capacitance [pF/cm]'
-
+     annotation: '< 0.5 pF/cm'
  
 
   Rint:
      table_headers: ['SENSOR', 'STRIPCOUPLE', 'RESSTNC_GOHM', 'RUN_NUMBER']
      sql_table_prefix: ris
-     unit: 'GOhm'
      factor_2-S: 1
      factor_PSS: 1
      Limit: 10
      label: 'Inter-strip Resistance [GOhm]'
-
+     annotation: '> 10 GOhm'
  
