@@ -31,6 +31,8 @@ SQC_parameters:
      Limit: 10
      label: 'Strip Current [nA/cm]'
      annotation: '< 10 nA/cm'
+     low: 0
+     up: 0.5
 
 
   Rpoly:
@@ -41,7 +43,8 @@ SQC_parameters:
      Limit: 1.5
      label: 'Polysilicon Resistance [MOhm]'
      annotation: '1.5 +/- 0.5 MOhm'
-
+     low: 1.0
+     up: 2.0
 
 
   Cac:
@@ -52,7 +55,8 @@ SQC_parameters:
      Limit: 1.2
      label: 'Coupling Capacitance [pF/(cm*um)]'
      annotation: '> 1.2 pF/(cm*um)'
-
+     low: 1.2
+     up: 1.35
 
   Idiel:
      table_headers: ['SENSOR', 'STRIP', 'CURRNTPH_NAMP', 'RUN_NUMBER']
@@ -62,7 +66,8 @@ SQC_parameters:
      Limit: 10
      label: 'Dielectric Current [nA/cm]'
      annotation: '< 10 nA@10V'
-
+     low: 0
+     up: 300
 
 
   Cint:
@@ -73,14 +78,16 @@ SQC_parameters:
      Limit: 0.5
      label: 'Inter-strip Capacitance [pF/cm]'
      annotation: '< 0.5 pF/cm'
- 
+     low: 0.1
+     up: 1.0
 
   Rint:
      table_headers: ['SENSOR', 'STRIPCOUPLE', 'RESSTNC_GOHM', 'RUN_NUMBER']
      sql_table_prefix: ris
-     factor_2-S: 1
-     factor_PSS: 1
+     factor_2-S: 0.2
+     factor_PSS: 0.4
      Limit: 10
-     label: 'Inter-strip Resistance [GOhm]'
-     annotation: '> 10 GOhm'
- 
+     label: 'Inter-strip Resistivity [GOhm*cm ]'
+     annotation: '> 10 GOhm*cm'
+     low: 10
+     up: 4500
