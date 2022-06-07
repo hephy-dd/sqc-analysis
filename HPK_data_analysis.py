@@ -48,7 +48,7 @@ def find_avg_Rpoly(datafile):
 def find_batch_number(dirs):
     
    for d in dirs:
-        print(dirs)
+        
         #the following process is based on HPK standard ascii file names. If the latter changes then we need to modify the lines below
 
         #batch_1 = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(d)))[0].split('_')[2:3])
@@ -66,7 +66,7 @@ def find_bad_strips(datafile):
 
     if bad_strips=='-':
         bad_strips=0
-
+   
     return bad_strips
 
 
@@ -173,9 +173,9 @@ def make_dictionary_with_currents(files):
             ratio_dict.update({sensor: ratio})
             i_dict.update({sensor: [i600, i800, i1000]})
             total_bad_strips += int(find_bad_strips(f))
-
+             
             i600_list.append(i600)
-            #print(i_dict)
+            
             sensors_with_compliance = find_compliance(i_dict)
             
             compliance = len(sensors_with_compliance)
@@ -279,7 +279,7 @@ def plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict):
     plot_scatter(i_dict.keys(), i6, 'red', 'I@600V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
     plot_scatter(i_dict.keys(), i8, 'blue', 'I@800V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
     plot_scatter(i_dict.keys(), i10, 'green', 'I@1000V', batch, total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
-    # plot_distribution(i600_list, 'Current@600V')
+    #plot_distribution(i600_list, 'Current@600V')
    
     plt.savefig(batch + '.png')
 
@@ -396,7 +396,7 @@ def main():
               left_files =[]
             
               if len(txt_files)>=1: # trick to skip the empty files that are generated in the PS-s/PS-p case
-                if '2-S' in txt_files[0]:
+                if '2-S' or 'PSS' in txt_files[0]:
                    do_the_plots(txt_files)
              
                 else: 
