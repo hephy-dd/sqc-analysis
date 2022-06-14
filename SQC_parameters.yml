@@ -18,7 +18,7 @@ Strip_Parameters:
      2S_threshold: 40000 #pA
      PSS_threshold: 25000 #pA
      
-     
+    
    Rpoly: 
      variables: [Pad, Rpoly]
      units_conversion: 1e-6
@@ -28,7 +28,7 @@ Strip_Parameters:
      2S_threshold: 1.5 #Mohm
      PSS_threshold: 1.5 #Mohm
      
-     
+   
    Cac:
       variables: [Pad, Cac]
       units_conversion: 1e12      
@@ -47,11 +47,13 @@ Strip_Parameters:
       bad_strip: Pinholes
       2S_threshold: 10000 #pA
       PSS_threshold: 10000 #pA
-      
+
+
+   
    Rint:
       variables: [Pad, Rint]
       units_conversion: 1e-9
-      units: GOhm
+      units: \u03A9
       title: Interstrip Resistance
       bad_strip: Low Rint
       2S_threshold: 2.5 #Gohm
@@ -66,6 +68,20 @@ Strip_Parameters:
       2S_threshold: 2.5 #pF
       PSS_threshold: 2.5 #pF 
      
+     
+   Temperature:
+      variables: [Pad, Temperature]
+      units_conversion: 1
+      units: \u00B0C
+      title: Temperature during measurement
+      
+   Humidity:
+      variables: [Pad, Humidity]
+      units_conversion: 1
+      units: $\%$
+      title: Humidity during measurement 
+
+
 
 IVCV_Parameters: 
      
