@@ -422,7 +422,7 @@ def do_the_plots(files):
 
 def parse_args():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(epilog = 'path to directory which contains VPXBXXXXX directories with ascii files' )
     parser.add_argument('path')
     return parser.parse_args()
 
