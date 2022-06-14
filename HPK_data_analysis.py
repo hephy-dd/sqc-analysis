@@ -7,6 +7,9 @@ import glob
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 import warnings
+from scipy.stats import linregress
+import scipy.signal
+
 
 
 colors = ['red', 'gold', 'darkgreen', 'deepskyblue', 'black', 'blue', 'm', 'grey', 'coral', 'violet',
@@ -310,46 +313,97 @@ def find_compliance(i_dict):
 
 
 
-def analyse_cv(v, c, cut_param=0.004, debug=False):
+def analyse_cv( v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=500, savgol_windowsize=None, min_correl=0.1, debug=False):
+    """
+    Diode CV: Extract depletion voltage and resistivity.
+    Parameters:
+    v ... voltage
+    c ... capacitance
+    area ... implant size in [m^2] - defaults to quarter
+    carrier ... majority charge carriers ['holes', 'electrons']
+    cut_param ... used to cut on 1st derivative to id voltage regions
+    max_v ... for definition of fit region, only consider voltages < max_v
+    savgol_windowsize ... number of points to calculate the derivative, needs to be odd
+    min_correl ... minimum correlation coefficient to say that it worked
+    Returns:
+    v_dep1 ... full depletion voltage via inflection
+    v_dep2 ... full depletion voltage via intersection
+    rho ... resistivity
+    conc ... bulk doping concentration
+    """
 
     # init
-    v_dep2 = -1
+    v_dep1 = v_dep2 = rho = conc = np.nan
+    a_rise = b_rise = a_const = b_const = np.nan
+    v_rise = []
+    v_const = []
+    status = 'Pass'
 
+    if savgol_windowsize is None:
+        # savgol_windowsize = int(len(c) / 40 + 1) * 2 + 1  # a suitable off windowsie - making 20 windows along the whole measurement
+        savgol_windowsize = int(len(c) / 30 + 1) * 2 + 1  # a suitable off windowsie - making 15 windows along the whole measurement
+        # the window size needs to be an odd number, therefore this strange calculation
 
+    # invert and square
+    #c = [1./i**2 for i in c]
 
     # get spline fit, requires strictlty increasing array
     y_norm = c / np.max(c)
     x_norm = np.arange(len(y_norm))
-    spl = CubicSpline(x_norm, y_norm)
-    spl_dev = spl(x_norm, 1)
+   
+    spl_dev = scipy.signal.savgol_filter(y_norm, window_length=savgol_windowsize, polyorder=1, deriv=1)
 
+    # for definition of fit region, only consider voltages < max_v
+    idv_max = max([i for i, a in enumerate(v) if abs(a) < max_v])
+    spl_dev = spl_dev[:idv_max]
 
-    # get regions for indexing
-    idx_rise = [ i for i in range(len(spl_dev)) if (abs(spl_dev[i]) > cut_param) ]
-    idx_const = [ i for i in range(len(spl_dev)) if (abs(spl_dev[i]) < cut_param) ]
+    idx_rise = []
+    idx_const = []
 
     with warnings.catch_warnings():
         warnings.filterwarnings('error')
 
         try:
-            v_rise = v[ idx_rise[-6]:idx_rise[-1]+1 ]
-            v_const = v[ idx_const[1]:idx_const[-1]+1 ]
-            c_rise = c[ idx_rise[-6]:idx_rise[-1]+1 ]
-            c_const = c[ idx_const[1]:idx_const[-1]+1 ]
+            # get regions for indexing
+            idx_rise = [i for i in range(2, len(spl_dev-1)) if ((spl_dev[i]) > cut_param)]  # the first and last value seems to be off sometimes
+            idx_const = [i for i in range(2, len(spl_dev-1)) if ((spl_dev[i]) < cut_param) and i > idx_rise[-1]]
+
+            v_rise = v[idx_rise[0]:idx_rise[-1] + 1]
+            v_const = v[idx_const[0]:idx_const[-1] + 1]
+            c_rise = c[idx_rise[0]:idx_rise[-1] + 1]
+            c_const = c[idx_const[0]:idx_const[-1] + 1]
 
             # line fits to each region
-            a_rise, b_rise = np.polyfit(v_rise, c_rise, 1)
-            a_const, b_const = np.polyfit(v_const, c_const, 1)
+            a_rise, b_rise, r_value_rise, p_value_rise, std_err_rise = scipy.stats.linregress(v_rise, c_rise)
+            a_const, b_const, r_value_const, p_value_const, std_err_const = scipy.stats.linregress(v_const, c_const)
+
+        
+            mu = 1350*1e-4 
+
+            # full depletion voltage via max. 1st derivative
+            v_dep1 = v[np.argmax(spl_dev)]
 
             # full depletion via intersection
             v_dep2 = (b_const - b_rise) / (a_rise - a_const)
+            
+            conc = 2. / (1.6e-19 * 11.68 *8.854e-12 * a_rise * area**2) 
+            rho = 1. / (mu*1.6e-19 *conc)
 
+
+
+        except np.RankWarning:
+            
+            print("The array has too few data points. Try changing the cut_param parameter.")
 
         except (ValueError, TypeError, IndexError):
-
+        
             print("The array seems empty. Try changing the cut_param parameter.")
 
-    return  v_dep2
+        if status == 'Fail':
+            #print("The fit didn't work as expected, returning nan")
+            return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, STATUS_FAILED
+    
+    return v_dep2
     
     
 def do_the_plots(files):
@@ -367,13 +421,9 @@ def do_the_plots(files):
 
 
 def parse_args():
-    
 
-    parser = argparse.ArgumentParser(epilog = 'a path to directory containing one or more VPBXXXXX directories with ascii files')
-    parser.print_help()
+    parser = argparse.ArgumentParser()
     parser.add_argument('path')
-    
-    
     return parser.parse_args()
 
 
