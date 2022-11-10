@@ -98,7 +98,7 @@ def plot_distribution(data, xlabel, batch):
 
 
 
-def plot_scatter(x, y, color, label, title, bad_strips, sensors_reached_compliance, sensors_with_large_ratio):
+def plot_scatter(x, y, color, label, title, bad_strips, sensors_reached_compliance, sensors_with_large_ratio, y_axis_notfixed):
     plt.scatter(x,y, color=color, label = label)
     plt.title("Batch {} HPK measured currents".format(title))
     plt.ylabel('Current [nA]')
@@ -107,25 +107,30 @@ def plot_scatter(x, y, color, label, title, bad_strips, sensors_reached_complian
     plt.legend(loc='best', fontsize=7)
     annotate = 'Total bad strips : {} \nSensors with breakdown: {} \nSensors with i800/i600 beyond the limit: {} '.format(bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
     plt.annotate(annotate, (0.25, 0.65), xycoords='figure fraction', color='black')
+    if not y_axis_notfixed:
+        plt.ylim(0,1100)
 
 
-def plot_vfd(x, y, title):
+def plot_vfd(x, y, title, y_axis_notfixed):
 
     plt.scatter(x, y, color='red')
     plt.title("Batch {} Extracted Vfd from HPK data".format(title))
     plt.ylabel('Full Depletion Voltage [V]')
     plt.tick_params(axis='x', labelsize=7)
     plt.xticks(rotation=90, ha='right')
+    if not y_axis_notfixed:
+         plt.ylim(0,360)
     
 
-def plot_graph(x, y, yaxis, batch, marker, label, color):
+def plot_graph(x, y, yaxis, batch, marker, label, color, y_scale):
 
 
     plt.plot(x, y, marker=marker, color = color, markersize=5, label=label)
     plt.title('HPK data Batch {}'.format(batch), fontname="Times New Roman", fontsize=16, fontweight='bold')
     plt.xlabel('Voltage [V]', fontsize=12)
     plt.ylabel('{}'.format(yaxis), fontsize=12)
-    #plt.yscale('log')
+    if not y_scale and 'Current' in yaxis:
+         plt.ylim(0,1100)
     plt.tick_params(axis='y', labelsize=12)
     plt.tick_params(axis='x', labelsize=12)
     plt.legend(loc='best', fontsize=5, ncol=2)
@@ -197,7 +202,7 @@ def make_dictionary_with_currents(files):
 
 
 
-def plot_IVCV(files):
+def plot_IVCV(files, y_axis_notfixed):
     # This function takes a list of ascii files as an input and generates
     # a dataframe which conta
 
@@ -240,7 +245,8 @@ def plot_IVCV(files):
 
     for sensor,current in current_dict.items():
 
-         plot_graph(iv_voltages, current, 'Current [nA]', batch, marker_style[marker_index],  color= colors[index], label=sensor)
+         plot_graph(iv_voltages, current, 'Current [nA]', batch, marker_style[marker_index],  color= colors[index], label=sensor, y_scale= y_axis_notfixed)
+         
          index += 1
          if index==len(colors):
              index = 0
@@ -254,8 +260,9 @@ def plot_IVCV(files):
 
     for sensor,capacitance in capacitance_dict.items():
 
-         plot_graph(cv_voltages, capacitance, '1/C$^2$ [F$^{-2}$]', batch, marker_style[marker_index],  color= colors[index], label=sensor)
+         plot_graph(cv_voltages, capacitance, '1/C$^2$ [F$^{-2}$]', batch, marker_style[marker_index],  color= colors[index], label=sensor, y_scale=y_axis_notfixed)
          index += 1
+         
          if index==len(colors):
              index = 0
              marker_index +=1
@@ -266,24 +273,25 @@ def plot_IVCV(files):
     
     for sensor, vfd in vfd_dict.items():
 
-        plot_vfd(sensor, vfd, batch)
+        plot_vfd(sensor, vfd, batch, y_axis_notfixed)
 
     plt.savefig("Vfd_{}.png".format(batch))
 
 
 
-def plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict):
+def plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict, y_axis_notfixed):
 
     i6 = [i[0] for i in i_dict.values()]
     i8 = [i[1] for i in i_dict.values()]
     i10 = [i[2] for i in i_dict.values()]
     sensors_reached_compliance = find_compliance(i_dict)
     sensors_with_large_ratio = find_sensors_with_large_ratio(ratio_dict)
-    plot_scatter(i_dict.keys(), i6, 'red', 'I@600V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
-    plot_scatter(i_dict.keys(), i8, 'blue', 'I@800V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
-    plot_scatter(i_dict.keys(), i10, 'green', 'I@1000V', batch, total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio)
+    plot_scatter(i_dict.keys(), i6, 'red', 'I@600V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio, y_axis_notfixed)
+    plot_scatter(i_dict.keys(), i8, 'blue', 'I@800V', batch,total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio, y_axis_notfixed)
+    plot_scatter(i_dict.keys(), i10, 'green', 'I@1000V', batch, total_bad_strips, sensors_reached_compliance, sensors_with_large_ratio, y_axis_notfixed)
     #plot_distribution(i600_list, 'Current@600V')
-   
+    if not y_axis_notfixed:
+        plt.ylim(0,1100)
     plt.savefig(batch + '.png')
 
 
@@ -406,24 +414,25 @@ def analyse_cv( v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=
     return v_dep2
     
     
-def do_the_plots(files):
+def do_the_plots(files, y_axis_notfixed):
 
-  plot_IVCV(files)
+  plot_IVCV(files, y_axis_notfixed)
   plt.clf()
 
   
   i_dict, batch, total_bad_strips, ratio_dict, i600_list, compliance = make_dictionary_with_currents(files)
  
   
-  plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict)
+  plot_currents_per_batch(i_dict, batch, total_bad_strips, ratio_dict, y_axis_notfixed)
   i_dict.clear()
   plt.clf()
 
 
 def parse_args():
 
-    parser = argparse.ArgumentParser(epilog = 'path to directory which contains VPXBXXXXX directories with ascii files' )
-    parser.add_argument('path')
+    parser = argparse.ArgumentParser(epilog = 'path to directory which contains VPXBXXXXX directories with ascii files and by default yaxis are fixed, give input -nf otherwise' )
+    parser.add_argument('path', help='give path to the HPK folders')
+    parser.add_argument('-nf', '--notfixed', action='store_true', help='set y axis not fixed')
     return parser.parse_args()
 
 
@@ -432,7 +441,10 @@ def parse_args():
 def main():
 
     args = parse_args()
+    y_axis_notfixed = False
+    if args.notfixed:
     
+        y_axis_notfixed = True
 
 
     for subdirs, dirs, files in os.walk(args.path):
@@ -451,7 +463,7 @@ def main():
             
               if len(txt_files)>=1: # trick to skip the empty files that are generated in the PS-s/PS-p case
                 if '2-S' or 'PSS' in txt_files[0]:
-                   do_the_plots(txt_files)
+                   do_the_plots(txt_files, y_axis_notfixed)
              
                 else: 
                    for f in txt_files:
@@ -462,9 +474,9 @@ def main():
                        right_files.append(f)
              
                    if len(left_files)>1:                 
-                      do_the_plots(left_files)
+                      do_the_plots(left_files, y_axis_notfixed)
                    if len(right_files)>1:
-                      do_the_plots(right_files)
+                      do_the_plots(right_files, y_axis_notfixed)
                 
            
             
@@ -486,7 +498,7 @@ def main():
             path = args.path
            
             txt_files = glob.glob(path + os.sep + dir + os.sep  + '**' + os.sep + '*.txt', recursive=True)
-            do_the_plots(txt_files)
+            do_the_plots(txt_files, y_axis_notfixed)
 
 
 
