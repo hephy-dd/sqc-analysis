@@ -1,0 +1,71 @@
+# SQC parameters for querying from Database
+
+
+SQC_parameters:
+
+  IV:
+          
+     query: 'select iv.SENSOR, iv.VOLTS, iv.CURRNT_AMP, iv.TEMP_DEGC, iv.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_iv_v iv inner join trker_cmsr.runs run on iv.RUN_NUMBER=run.RUN_NUMBER'     
+     table_headers: ['SENSOR', 'VOLTS', 'I_TOTAL', 'TEMP_DEGC', 'LOCATION', 'RUN_NUMBER', 'TYPE']
+     sql_table_prefix: iv
+     unit: 'nA'
+     scaling: 1
+     label: 'Total Current'
+
+
+
+  CV: 
+     query: "select cv.SENSOR, cv.VOLTS, cv.CAP_PFRD, cv.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_cv_v cv inner join trker_cmsr.runs run on cv.RUN_NUMBER=run.RUN_NUMBER"     
+     table_headers: ['SENSOR', 'VOLTS', 'CAPACITANCE', 'RUN_NUMBER', 'LOCATION', 'TYPE']
+     sql_table_prefix: cv 
+     unit: 'nF'
+     scaling: 1
+     label: 'Capacitance'
+
+
+
+  Istrip:
+     query: 'select ileak.SENSOR, ileak.STRIP, ileak.CURRNT_NAMPR, ileak.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_is_v ileak inner join trker_cmsr.runs run on ileak.RUN_NUMBER=run.RUN_NUMBER'     
+     table_headers: ['SENSOR', 'STRIP', 'I_STRIP', 'RUN_NUMBER', 'LOCATION', 'TYPE']
+     sql_table_prefix: ileak
+     label: 'Strip Current [nA]'
+
+
+  Rpoly:
+     query: 'select rs.SENSOR, rs.STRIP, rs.RESSTNC_MOHM, rs.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_rs_v rs inner join trker_cmsr.runs run on rs.RUN_NUMBER=run.RUN_NUMBER'     
+     table_headers: ['SENSOR', 'STRIP', 'R_POLY', 'RUN_NUMBER', 'LOCATION', 'TYPE']
+     sql_table_prefix: rs
+     label: 'Polysilicon Resistance [MOhm]'
+
+
+
+  Cac:
+          
+     query: 'select cs.SENSOR, cs.STRIP, cs.CAPCTNC_PFRD, cs.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_cs_v cs inner join trker_cmsr.runs run on cs.RUN_NUMBER=run.RUN_NUMBER'     
+     table_headers: ['SENSOR', 'STRIP', 'COUP_CAP', 'RUN_NUMBER', 'LOCATION', 'TYPE']
+     sql_table_prefix: cs
+     label: 'Coupling Capacitance [pF]'
+
+
+
+  Idiel:     
+     query: 'select phs.SENSOR, phs.STRIP, phs.CURRNTPH_NAMP, phs.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_phs_v phs inner join trker_cmsr.runs run on phs.RUN_NUMBER=run.RUN_NUMBER'     
+     table_headers: ['SENSOR', 'STRIP', 'I_DIEL', 'RUN_NUMBER', 'LOCATION', 'TYPE']
+     sql_table_prefix: phs
+     label: 'Dielectric Current [nA]'
+
+
+
+  Cint:     
+     query: 'select cis.SENSOR, cis.STRIPCOUPLE, cis.CAPCTNC_PFRD, cis.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_cis_v cis inner join trker_cmsr.runs run on cis.RUN_NUMBER=run.RUN_NUMBER'     
+     table_headers: ['SENSOR', 'STRIPCOUPLE', 'CINT', 'RUN_NUMBER', 'LOCATION', 'TYPE'] 
+     sql_table_prefix: cis
+     label: 'Inter-strip Capacitance [pF]'
+
+
+
+  Rint:
+     query: 'select ris.SENSOR, ris.STRIPCOUPLE, ris.RESSTNC_GOHM, ris.RUN_NUMBER, run.LOCATION, run.RUN_TYPE from trker_cmsr.tracker_sensor_ris_v ris inner join trker_cmsr.runs run on ris.RUN_NUMBER=run.RUN_NUMBER'     
+     table_headers: ['SENSOR', 'STRIPCOUPLE', 'RINT', 'RUN_NUMBER', 'LOCATION', 'TYPE']
+     sql_table_prefix: ris
+     label: 'Inter-strip Resistance [GOhm]'
