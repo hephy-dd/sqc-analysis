@@ -44,7 +44,7 @@ SQC_parameters:
      label: 'Polysilicon Resistance [MOhm]'
      annotation: '1.5 +/- 0.5 MOhm'
      low: 1.0
-     up: 2.0
+     up: 2.2
 
 
   Cac:

@@ -1,0 +1,187 @@
+# PQC parameters for querying from Database
+
+
+PQC_tables:
+
+  IV:
+       
+     query: 'select pqc.CONDITION_DATA_SET_ID as CONDITION_ID, pqc.PART_ID as PART, pqc.PART_BARCODE as HALFMOON, pqc.RSH_OHMSQR as RSHEET, pqc.T_UM as LWDTH, pqc.ISURF_PAMPR as ISURF, pqc.S0_CMSEC as S0, pqc.RHO_KOHMCM as RBULK, pqc.RPOLY_MOHM as RPOLY , pqc.R_OHM as RCONTACT, pqc.VBD_V as OXIDE_BD, meta.CONDITION_DATA_SET_ID as MET_CONDITION_ID, meta.PART_ID as MET_PART, meta.KIND_OF_HM_FLUTE_ID as MET_FLUTE, meta.KIND_OF_HM_STRUCT_ID as MET_STRUCT, meta.KIND_OF_HM_CONFIG_ID as MET_CONFIG, meta.KIND_OF_HM_SET_ID as MET_HM_SET, meta.FILE_NAME as MET_FILE from trker_cmsr.c9120 pqc inner join trker_cmsr.c8920 meta on pqc.CONDITION_DATA_SET_ID = meta.CONDITION_DATA_SET_ID + 2'
+     sql_table_prefix: 9120
+     dataframe_headers: ['Condition_number', 'Part_ID', 'Halfmoon', 'R_sheet', 'Linewidth', 'Isurf', 'S0',  'vdp_bulk', 'Rpoly', 'rcont_strip', 'Oxide_Vbd', 'meta_condition_number', 'meta_Part_ID', 'Flute', 'Parameter', 'Config', 'Position', 'File'] 
+     parameters: ['R_sheet', 'Linewidth', 'Isurf', 'S0', 'vdp_bulk', 'Rpoly', 'rcont_strip', 'Oxide_Vdb']
+
+
+
+
+  CV:
+       
+     query: 'select pqc.CONDITION_DATA_SET_ID as CONDITION_ID, pqc.PART_ID as PART, pqc.PART_BARCODE as HALFMOON, pqc.RHO_KOHMCM as RBULK, pqc.VDPLNR_V as VFDEPL, pqc.VFB_V as VFB, pqc.NOX as NOXIDE, pqc.NA as NA_DOP, pqc.TOX_NM as TOXIDE, pqc.DOX_NM as DOXIDE, meta.CONDITION_DATA_SET_ID as MET_CONDITION_ID, meta.PART_ID as MET_PART, meta.KIND_OF_HM_FLUTE_ID as MET_FLUTE, meta.KIND_OF_HM_STRUCT_ID as MET_STRUCT, meta.KIND_OF_HM_CONFIG_ID as MET_CONFIG, meta.KIND_OF_HM_SET_ID as MET_HM_SET, meta.FILE_NAME as MET_FILE from trker_cmsr.c9140 pqc inner join trker_cmsr.c8920 meta on pqc.CONDITION_DATA_SET_ID = meta.CONDITION_DATA_SET_ID + 2'
+     sql_table_prefix: 9140 
+     dataframe_headers: ['Condition_number', 'Part_ID', 'Halfmoon', 'Diode_bulk', 'Diode_Vfd', 'Vfb', 'Nox', 'Cdop', 'Tox', 'Dox', 'meta_condition_number', 'meta_Part_ID', 'Flute', 'Parameter', 'Config', 'Position', 'File'] 
+     parameters: ['Diode_bulk', 'Diode_Vfd', 'Vfb', 'Nox', 'Cdop', 'Tox', 'Dox']
+
+
+
+  FET:
+          
+     query: 'select pqc.CONDITION_DATA_SET_ID as CONDITION_ID, pqc.PART_ID as PART, pqc.PART_BARCODE as HALFMOON, pqc.VTH_V as VFET, meta.CONDITION_DATA_SET_ID as MET_CONDITION_ID, meta.PART_ID as MET_PART, meta.KIND_OF_HM_FLUTE_ID as MET_FLUTE, meta.KIND_OF_HM_STRUCT_ID as MET_STRUCT, meta.KIND_OF_HM_CONFIG_ID as MET_CONFIG, meta.KIND_OF_HM_SET_ID as MET_HM_SET, meta.FILE_NAME as MET_FILE from trker_cmsr.c9160 pqc inner join trker_cmsr.c8920 meta on pqc.CONDITION_DATA_SET_ID = meta.CONDITION_DATA_SET_ID + 2'
+     sql_table_prefix: 9160
+     dataframe_headers: ['Condition_number', 'Part_ID', 'Halfmoon', 'Vth', 'meta_condition_number', 'meta_Part_ID', 'Flute', 'Parameter', 'Config', 'Position', 'File'] 
+     parameters: ['Vth']
+
+
+
+
+PQC_parameters: 
+
+
+  pstop_vdp: 
+            sql_label: 'VDP_STOP'
+            units: 'Ohm/sq'
+            ylabel: 'P-stop Sheet Resistance'
+            lower: 15000
+            upper: 30000
+
+
+  strip_vdp:
+            sql_label: 'VDP_STRIP'
+            units: 'Ohm/sq'
+            ylabel: 'Strip Sheet Resistance'
+            lower: 25
+            upper: 40
+
+  poly_vdp: 
+            sql_label: 'VDP_POLY'
+            units: 'Ohm/sq'
+            ylabel: 'PolySi Sheet Resistance'
+            lower: 1700
+            upper: 2500
+
+
+  Rpoly: 
+         sql_label: 'R_POLY'
+         units : 'MOhm'
+         ylabel: 'PolySi Resistance'
+         lower: 0.5
+         upper: 3.0
+
+  rcont_strip:
+         sql_label: 'CC_STRIP'
+         units : 'Ohm'
+         ylabel: 'Contact Chain strip'
+         lower: 0.0
+         upper: 500000.0
+
+
+  vdp_bulk:
+            sql_label: 'VDP_BULK'
+            units: 'kOhm*cm'
+            ylabel: 'Bulk Resistivity'# (VdP structure)'
+            lower: 0
+            upper: 10
+
+
+  linewidth_strip: 
+            sql_label: 'LINEWIDTH_STRIP'
+            units: 'um'
+            ylabel: 'Linewidth strip'
+            lower: 25
+            upper: 40
+
+
+    
+  linewidth_pstop: 
+            sql_label: 'LINEWIDTH_STOP'
+            units: 'um'
+            ylabel: 'Linewidth p-stop' 
+            lower: 30
+            upper: 70
+
+  Isurf: 
+       sql_label: 'GCD'
+       units: 'pA'
+       ylabel: 'Surface Current' 
+       lower: 0
+       upper: 12
+
+        
+  S0: 
+       sql_label: 'GCD'
+       units: 'cm/s'
+       ylabel: 'Interface Recombination velocity' 
+       lower: 0
+       upper: 10
+
+
+  Oxide_Vbd:
+  
+       sql_label: 'DIEL'
+       units: 'V'
+       ylabel: 'Oxide breakdown Voltage' 
+       lower: 0
+       upper: 300
+  
+
+  
+  Diode_Vfd:
+      sql_label: 'DIODE_HALF'       
+      units: 'V'
+      ylabel: 'Bulk Resistivity (diode)'
+      lower: 0
+      upper: 500
+
+
+
+  Diode_bulk:
+      sql_label: 'DIODE_HALF'       
+      units: 'KOhm*cm'
+      ylabel: 'Bulk Resistivity (diode)'
+      lower: 0
+      upper: 10
+
+
+
+  Vfb:
+      sql_label: 'MOS_QUARTER'
+      units: 'V'
+      ylabel: 'Flat-Band Voltage'
+      lower: 1.0
+      upper: 6.0
+
+  Nox:  
+      sql_label: 'MOS_QUARTER'
+      units: 'cm^-2'
+      ylabel: 'Oxide Concentration'
+      lower: 0
+      upper: 1000000000000
+
+  Tox:
+     sql_label: 'MOS_QUARTER'
+     units: 'nm'
+     ylabel: 'Oxide thickness'
+     lower: 500
+     upper: 800
+
+  Dox:
+     sql_label: 'CAP_'
+     units: 'nm'
+     ylabel: 'Oxide thickness'
+     lower: 0
+     upper: 1000
+     
+
+  Vfd:
+      sql_label: 'VDPLNR_V'
+      units: 'V'
+      ylabel: 'Full Depletion Voltage'
+      lower: 100
+      upper: 400
+
+
+  Vth:
+      sql_label: 'FET_'
+      units: 'V'
+      ylabel: 'Threshold Voltage'
+      lower: -1.0
+      upper: 9.0
+
