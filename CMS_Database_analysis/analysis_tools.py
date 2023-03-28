@@ -47,7 +47,7 @@ class SQC_tools():
    df = pd.DataFrame(datalist, columns=headers)
    if sql_parameter !='runs' and file_prefix=='SQC':
        # drop data from older sensors
-       
+      
        df = df.loc[(~df['Sensor'].str.contains('HPK'))]
        df = df.loc[~df['Sensor'].str.contains('33234')]
 
@@ -58,6 +58,7 @@ class SQC_tools():
  def filter_dataframe(self, df, parameter, lower_limit, upper_limit):
 
    df[parameter] = pd.to_numeric(df[parameter]).abs()
+   
 
    df = df.loc[(df[parameter]<float(upper_limit)) & (df[parameter]>float(lower_limit))]
 
@@ -83,7 +84,7 @@ class SQC_tools():
     df['Batch'] = np.nan
 
     df['Batch'] = (df[header].str.split('_')).str[0]
-    df['Batch'] = pd.to_numeric(df['Batch'])
+    df['Batch'] = pd.to_numeric(df['Batch'], errors='coerce')
 
     df = df.sort_values(by=['Batch'])
 
@@ -154,8 +155,8 @@ class SQC_tools():
 
     html_table = build_table(df, color, text_align='center')
     with open('html_tables/{}.html'.format(name), 'w') as f:
-       # f.write('<html><body><h1> {} outside of specifications <font color = #4000FF></font></h1>\n</body></html>')
-       # f.write('\n')
+        f.write('<html><body><h1> {} outside of specifications <font color = #4000FF></font></h1>\n</body></html>')
+        f.write('\n')
         f.write(html_table)
 
 
@@ -179,7 +180,10 @@ class SQC_tools():
         bad_strips_df = df.loc[df[parameter].abs()>config_file['SQC_parameters'][parameter]['Limit']]
 
     return bad_strips_df
-
+    
+    
+    
+    
 
 
 
@@ -194,7 +198,7 @@ class SQC_tools():
 
 
 
- def analyse_cv(self, v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=500, savgol_windowsize=None, min_correl=0.1, debug=False):
+ def analyse_cv(self, v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=600, savgol_windowsize=None, min_correl=0.1, debug=False):
     """
     Diode CV: Extract depletion voltage and resistivity.
     Parameters:
@@ -229,6 +233,8 @@ class SQC_tools():
     #c = [1./i**2 for i in c]
 
     # get spline fit, requires strictlty increasing array
+    v = np.abs(v)
+    c = np.abs(c)
     y_norm = c / np.max(c)
     x_norm = np.arange(len(y_norm))
    
@@ -333,10 +339,9 @@ class SQC_tools():
     if parameter == 'vdp_bulk' or parameter=='Diode_bulk':
         plt.ylim(0,11)
         plt.axhline(y=3.5, linestyle='dashed', color='black')
-   #plt.axvline(x=16, linestyle='dashed', color='black')
+
     plt.axhline(y=df[parameter].median(), linestyle='dashed', color='black')
 
-    #plt.ylim(100, 400) 
     plt.ylabel(ylabel)
     plt.legend(loc='best')
    
@@ -363,11 +368,11 @@ class PQC_tools:
      
      with open('PQC_data/{}.json'.format(json_filename)) as f:
 
-         lista = json.load(f)
+         list_data = json.load(f)
 
      splt = []
 
-     for i in lista:
+     for i in list_data:
 
         splt.append(i.split(','))
 
@@ -401,7 +406,7 @@ class PQC_tools:
 
   def filter_data(self, df, parameter):
 
-    df[parameter] = pd.to_numeric(df[parameter]).abs()
+    df[parameter] = pd.to_numeric(df[parameter])
     df = df.dropna(subset=[parameter])
     
     return df
@@ -446,11 +451,11 @@ class PQC_tools:
     
 
     
-    parameter_df['Condition_number'] = parameter_df['Condition_number']- 2
+    parameter_df['Condition_number'] = parameter_df['Condition_number']- 1
 
 
    
-    merged_df = pd.merge(metadata_df, parameter_df[['Condition_number', str(parameter)]], on='Condition_number', how='left') #str(volts)
+    merged_df = pd.merge(metadata_df, parameter_df[['Condition_number', 'Volts', str(parameter)]], on='Condition_number', how='left') #str(volts)
 
     merged_df = merged_df.dropna(subset=[parameter])
     
@@ -475,8 +480,9 @@ class PQC_tools:
     
     df[parameter] = pd.to_numeric(df[parameter])
     
-    df[parameter] = df[parameter].abs()
     df = df.dropna(subset=[parameter])
+    if 'vdp' not in parameter:
+        df = df.drop_duplicates(subset=['Halfmoon', 'Part_ID', parameter])
 
 
     return df
@@ -505,7 +511,7 @@ class PQC_tools:
 
 
 
-  def analyse_cv(self, v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=500, savgol_windowsize=None, min_correl=0.1, debug=False):
+  def analyse_cv(self, v, c, area=6.25e-2, carrier='holes', cut_param=0.008, max_v=500, savgol_windowsize=None, min_correl=0.1, debug=False):
     """
     Diode CV: Extract depletion voltage and resistivity.
     Parameters:
@@ -570,7 +576,7 @@ class PQC_tools:
             a_const, b_const, r_value_const, p_value_const, std_err_const = scipy.stats.linregress(v_const, c_const)
 
         
-            mu = 1350*1e-4 
+            mu = 450
 
             # full depletion voltage via max. 1st derivative
             v_dep1 = v[np.argmax(spl_dev)]
@@ -578,10 +584,8 @@ class PQC_tools:
             # full depletion via intersection
             v_dep2 = (b_const - b_rise) / (a_rise - a_const)
             
-            conc = 2. / (1.6e-19 * 11.68 *8.854e-12 * a_rise * area**2) 
+            conc = 2. / (1.6e-19 * 11.68 *8.854e-14 * a_rise * area**2) 
             rho = 1. / (mu*1.6e-19 *conc)
-
-
 
         except np.RankWarning:
             
@@ -595,7 +599,7 @@ class PQC_tools:
             #print("The fit didn't work as expected, returning nan")
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, STATUS_FAILED
     
-    return v_dep1, v_dep2, conc
+    return v_dep2, conc, rho
 
 
 
@@ -610,16 +614,14 @@ class PQC_tools:
      
      batch = list(dict.fromkeys(df['Batch']))
    
-     
-     print(df.loc[df[parameter]<=low])
-     print(df.loc[df[parameter]<=low].shape[0])   
+  
 
      fig, ax = plt.subplots()
 
  
      hist, bins, patches = plt.hist(df[parameter].abs(), bins='auto', range=(low, upper), color='red', edgecolor='black', linewidth=1.2)
      
-     print(patches[0].get_height())  
+
      patches[0].set_height(df.loc[df[parameter]<=low].shape[0])
      patches[0].set_facecolor('blue')
      patches[-1].set_height(df.loc[df[parameter]>=upper].shape[0])
@@ -649,6 +651,8 @@ class PQC_tools:
      df_out_of_range = df.loc[(df[parameter]>upper) | (df[parameter]<low)]
      
      
+     
+     
      def plot_histo_with_outliers(df):     
          
          plt.clf()
@@ -669,14 +673,16 @@ class PQC_tools:
      batch = list(dict.fromkeys(df['Batch']))     
      fig, ax = plt.subplots()
       
-     sns.scatterplot(data=df, x='Batch', y=parameter, hue = 'HM_type', s=25, linewidth=0, ax=ax) #, hue='Location'
+     sns.scatterplot(data=df, x='Batch', y=parameter, hue = 'Location', s=25, linewidth=0, ax=ax) #, hue='Location'
      plt.xticks(batch, batch, rotation=90, va = 'top', fontsize=6)
      plt.locator_params(axis='x', nbins = len(batch)/4)
      ax.set_title('CMS Tracker data', fontsize= 15, fontweight = 'bold')
+  
      ax.set(xlabel=None)
      
      ax.set_ylabel('{} [{}]'.format(self.config_file['PQC_parameters'][str(parameter)]['ylabel'], self.config_file['PQC_parameters'][str(parameter)]['units']), fontsize=12, fontweight = 'bold')
  
     
  
-     plt.savefig('{}_filtered_type.pdf'.format(parameter))
+     plt.savefig('{}_filtered_location.pdf'.format(parameter))
+    

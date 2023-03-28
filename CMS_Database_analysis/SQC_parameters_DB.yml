@@ -7,6 +7,8 @@ SQC_parameters:
      table_headers: ['SENSOR', 'VOLTS', 'CURRNT_AMP', 'TEMP_DEGC', 'RUN_NUMBER']
      sql_table_prefix: iv
      unit: 'nA'
+     factor_2-S: 1
+     factor_PSS: 1
      scaling: 1
      Limit: 3125
      label: 'Total Current@600V'
@@ -17,6 +19,8 @@ SQC_parameters:
      table_headers: ['SENSOR', 'VOLTS', 'CAP_PFRD', 'RUN_NUMBER']
      sql_table_prefix: cv 
      unit: 'pF'
+     factor_2-S: 1
+     factor_PSS: 1 
      scaling: 1
      Limit: 350
      label: '1\C2'
@@ -29,10 +33,10 @@ SQC_parameters:
      factor_2-S: 5
      factor_PSS: 2.5 
      Limit: 10
-     label: 'Strip Current [nA/cm]'
+     label: 'Strip Current (nA/cm)'
      annotation: '< 10 nA/cm'
-     low: 0
-     up: 0.5
+     low: -0.25 #arbitrary limit, please change according to plot
+     up: 0
 
 
   Rpoly:
@@ -41,10 +45,10 @@ SQC_parameters:
      factor_2-S: 1
      factor_PSS: 1
      Limit: 1.5
-     label: 'Polysilicon Resistance [MOhm]'
+     label: 'Polysilicon Resistance (MOhm)'
      annotation: '1.5 +/- 0.5 MOhm'
      low: 1.0
-     up: 2.2
+     up: 2.2 # should be 2.0 but since we have many strips near 2.0 MOhm, it is increased arbitrarily
 
 
   Cac:
@@ -55,7 +59,7 @@ SQC_parameters:
      Limit: 1.2
      label: 'Coupling Capacitance [pF/(cm*um)]'
      annotation: '> 1.2 pF/(cm*um)'
-     low: 1.2
+     low:  1.2
      up: 1.35
 
   Idiel:
@@ -64,10 +68,10 @@ SQC_parameters:
      factor_2-S: 1
      factor_PSS: 1
      Limit: 10
-     label: 'Dielectric Current [nA/cm]'
+     label: 'Dielectric Current (nA)'
      annotation: '< 10 nA@10V'
      low: 0
-     up: 300
+     up: 1
 
 
   Cint:
@@ -76,7 +80,7 @@ SQC_parameters:
      factor_2-S: 5
      factor_PSS: 2.5
      Limit: 0.5
-     label: 'Inter-strip Capacitance [pF/cm]'
+     label: 'Inter-strip Capacitance [pF/(cm*um)]'
      annotation: '< 0.5 pF/cm'
      low: 0.1
      up: 1.0
@@ -87,7 +91,7 @@ SQC_parameters:
      factor_2-S: 0.2
      factor_PSS: 0.4
      Limit: 10
-     label: 'Inter-strip Resistivity [GOhm*cm ]'
-     annotation: '> 10 GOhm*cm'
-     low: 10
-     up: 4500
+     label: 'Inter-strip Resistivity (GOhm*cm)'
+     annotation: '> 4 GOhm'
+     low: 0
+     up: 800 #arbitrary
