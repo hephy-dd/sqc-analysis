@@ -9,7 +9,7 @@ import os
 
 
 
-parameters = ['Rpoly', 'Cac', 'Idiel', 'Cint', 'Rint'] # 'IV', 'CV', 'Istrip'
+parameters = ['IV', 'CV', 'Istrip', 'Rpoly', 'Cac', 'Idiel', 'Cint', 'Rint'] 
 
 
 
@@ -32,7 +32,7 @@ def query_data_from_DB(query, table_header_list, parameter):
   error_message = 'ERROR: Exception'
   data = [] 
 
-  p1 = subprocess.run(['python3', 'rhapi.py', '-n', '--login', '-all', '--url=https://cmsdca.cern.ch/trk_rhapi',
+  p1 = subprocess.run(['python3', 'rhapi.py', '-n', '--login', '--clean', '-all', '--url=https://cmsdca.cern.ch/trk_rhapi',
            '{}'.format(query)], capture_output=True)
 
   answer = p1.stdout.decode().splitlines()
@@ -83,13 +83,13 @@ def query_runs_table_from_DB():
 
 
 
-def query_SQC_summary_from_DB(table_sensor_type, table_wafer_type):
+def query_SQC_summary_from_DB(table_sensor_type):
     
 
   print('Querying SQC summary information from the CMS DB')
 
   p1 = subprocess.run(['python3', 'rhapi.py', '-n', '--login', '-all', '--url=https://cmsdca.cern.ch/trk_rhapi',
-                      "select sqc.NAME_LABEL, sqc.BATCH_NUMBER, sqc.SERIAL_NUMBER, sqc.DESCRIPTION, sqc.ASENSOR_TYPE, sqc.ASTATUS, sqc.ASENSOR_KNOWN_PROBLEM. vqc.NAME_LABEL, vqc.KIND_OF_PART, vqc.BARCODE, vqc.PRODUCTION_DATE, vqc.INGOT_NR  from trker_cmsr.{} as sqc inner join trker_cmsr.{} as vqc on sqc.NAME_LABEL = vqc.NAME_LABEL".format(table_sensor_type, table_wafer_type)], capture_output=True)
+                      "select sqc.NAME_LABEL, sqc.BATCH_NUMBER, sqc.PRODUCTION_DATE, sqc.ASENSOR_TYPE, sqc.ASTATUS, sqc.ASENSOR_KNOWN_PROBLEM from trker_cmsr.{} sqc".format(table_sensor_type)], capture_output=True)
 
   answer = p1.stdout.decode().splitlines()
   
@@ -154,7 +154,7 @@ def process_list_with_data(data):
 
 def generate_json_with_data(sqc_parameters):
 
-  summary_sensor_tables = {'2-S': 'p1120', 'PS-s': 'p1160'}
+  summary_sensor_tables = {'2-S': 'p1120', 'PS-s': 'p1160', 'PS-p': 'p1200'}
 
   summary_wafer_tables = {'2-S': 'p1100', 'PS-s': 'p1140'}
  
@@ -174,23 +174,17 @@ def generate_json_with_data(sqc_parameters):
   #runs_answer = query_runs_table_from_DB() 
  # save_DB_table_as_json(runs_answer, 'runs')
 
-  bad_strips_answer = query_bad_strips_from_DB()
+  #bad_strips_answer = query_bad_strips_from_DB()
 
-  save_DB_table_as_json(bad_strips_answer, 'bad_strips')
+  #save_DB_table_as_json(bad_strips_answer, 'bad_strips')
   
 
-  for (sensor_type, wafer_type), (table1, table2) in zip(summary_sensor_tables.items(), summary_wafer_tables.items()):
+  #for sensor_type, table in summary_sensor_tables.items():
 
-      summary_table_answer = query_SQC_summary_from_DB(table1, table2)
+   #   summary_table_answer = query_SQC_summary_from_DB(table)
+#
+ #     save_DB_table_as_json(summary_table_answer, 'summary_{}_sensors'.format(sensor_type))
 
-      save_DB_table_as_json(summary_table_answer, 'summary_{}_sensors'.format(sensor_type))
-
-
-  #for wafer_type, table in summary_wafer_tables.items():
-
-   #   summary_table_answer = query_VQC_summary_from_DB(table)
-    #  print(wafer_type)
-     # save_DB_table_as_json(summary_table_answer, 'summary_{}_wafers'.format(sensor_type))
 
 
 def run():
