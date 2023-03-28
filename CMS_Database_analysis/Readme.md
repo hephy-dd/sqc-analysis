@@ -4,7 +4,7 @@
 ## SQC analysis
 For this part the following scripts are necessary:
 
-* query_SQC_data_from_DB.py : executes queries and fetches data from the database
+* ```query_SQC_data_from_DB.py``` : executes queries and fetches data from the database
 * rhapi.py: script developed by CMS to interract with DB
 * analysis_tools.py: number of methods which are used for data analysis
 * SQC_analysis_db.py: all routines which correspond to the measurements, the data of which is analysed.
