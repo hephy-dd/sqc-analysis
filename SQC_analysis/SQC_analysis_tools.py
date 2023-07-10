@@ -10,16 +10,10 @@ import yaml
 import traceback
 from scipy.stats import linregress
 import scipy.signal
-
-
-
-headers_Stripscan = ['Pad', 'Istrip', 'Rpoly', 'Cac', 'Cac_Rp', 'Idiel', 'Cint', 'Cint_Rp', 'Idark', 'Rint', 'Temperature','Humidity']
-
-headers_IVC = ['Voltage [V]',  'current [A]' , 'capacitance [F]', 'temperature [deg]', 'humidity [%]'] 
-
-headers_HPK = ['Voltage [V]',  'current [A]']
-
-headers_HPK_cv = ['Voltage [V]',  'capacitance [F]']
+import requests
+import sys
+import getopt
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 
@@ -29,74 +23,18 @@ def read_config():
         conf = yaml.load(f, Loader=yaml.FullLoader)
 
     return conf
+    
+    
+    
+def get_link_for_slack_api():
 
+    with open('slack_link.txt') as f:
+        link = f.readlines()
+        
+    f.close()
+    
+    return str(link[0])
 
-
-def get_parameter(filename, parameter, clear):
-
-    if '2-S' in filename:
-        sensor_id = '2-S'
-    else:
-        sensor_id = 'PSS'
-
-    dict = make_dictionary(parameter, filename, sensor_id)
-
-    return dict
-
-
-
-def make_dictionary(main_parameter, file, prefix):
-
-    ### main_parameter: the parameter for which we will generate the xml file
-    ### config: the configuration data
-    ### file: the txt file to be analysed
-    ### headers: the headers of the txt file data
-    ### prefix: IVC or Str
-
-    dict_with_values = {}
-    config = read_config()
-    prefix = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(file)))[0].split('_')[0:1])
-
-
-    headers = config['headers']['IV' if prefix == 'IVC' else 'Str']
-
-
-    if 'Str' in file:
-
-         a= convert_txt_to_df(file, headers, 23 if '2-S' in file else 16)
-
-         df = a[a[main_parameter].notnull()]
-
-         for secondary_parameter in config['Strip_Parameters'][main_parameter]['variables']:
-            values = df[secondary_parameter].values
-
-            if secondary_parameter in config['Strip_Parameters']:
-
-              unit = float(config['Strip_Parameters'][secondary_parameter]['units_conversion'])
-              values = [i*unit for i in values] #convert the list with data in the required from DB units
-
-            dict_with_values[secondary_parameter] = values
-
-
-
-    elif 'IVC' in file:
-         a = convert_txt_to_df(file, headers, 9)
-         for secondary_parameter in config['IVCV_Parameters'][main_parameter]['variables']:
-
-           if main_parameter =='capacitance':
-             df = a[a[main_parameter].notnull()]
-             values = df[secondary_parameter].values
-           else:
-             values = a[secondary_parameter].values
-
-           if secondary_parameter in config['IVCV_Parameters']:
-
-             unit = float(config['IVCV_Parameters'][secondary_parameter]['units_conversion'])
-             values = [i * unit for i in values]  #convert the list with data in the required from DB units
-
-           dict_with_values[secondary_parameter] = values
-
-    return dict_with_values
 
 
 
@@ -114,11 +52,14 @@ def convert_txt_to_df(filename, headers, skip):
     return df
 
 
+
+
 def make_Dataframe_Stripscan(parameter, filename, sensor_id):
 
 
+    headers_Stripscan = read_config()['headers']['Str']
     
-    df= convert_txt_to_df(filename, headers_Stripscan, 23 if sensor_id=='2-S' else 16) #16
+    df= convert_txt_to_df(filename, headers_Stripscan, 23 if sensor_id=='2-S' else 16) 
     df[parameter] = pd.to_numeric(df[parameter])
     df = df.dropna(subset=[parameter])
 
@@ -128,32 +69,19 @@ def make_Dataframe_Stripscan(parameter, filename, sensor_id):
 
 def make_Dataframe_IVCV(filename, start_line):
 
-    
+    if 'IVC' in filename: # if SQC IV data
+        headers_IVC = read_config()['headers']['IVCV']
+    else: # if HPK IV data
+        if start_line==23:
+          headers_ivc = read_config()['headers']['HPK_IV'] # condition true if HPK IV 
+        else:
+          headers_ivc = read_config()['headers']['HPK_CV'] # condition true if HPK CV
+          
     df = convert_txt_to_df(filename, headers_IVC, start_line) 
-    df = df.dropna()
     
 
     return df
    
-
-
-
-def MAD(parameter, parameter_median):
-
-    parameter_mad = np.median(np.abs(((parameter - parameter_median))))
-    return parameter_mad
-
-
-
-def assign_label(file):
-
-    file = os.path.splitext(file)[0]
-    print(file)
-    lbl = '_'.join(file.split('_')[2:6])
-    batch = '_'.join(lbl.split('_')[0:1])
-    print(batch)
-  
-    return lbl, batch
 
 
 
@@ -167,47 +95,9 @@ def plot_graph(x, y, color, label, title, xlab, ylab):
    
      plt.tick_params(axis = 'y', labelsize=10)
      plt.tick_params(axis='x', labelsize=10)
-     
+     if 'IV' in title and np.max(y)>1000:
+           plt.ylim(0, 1000) # limit current at 1 uA in order to be comparable to HPK plot 
      plt.legend(loc='best', fontsize=8, ncol=1)
-
-
-
-
-def plot_scatter(x, y, color, label, title, xlab, ylab):
-
-     plt.scatter(x,y, s=10, color= color, marker='o', label=label)
-     plt.title(title)
-     plt.xlabel(xlab)
-     plt.ylabel(ylab)
-     #plt.yscale('log')
-     #plt.legend()
-
-
-
-def plot_lines(x, y, color, label, title, xlab, ylab):
-
-    plt.plot(x,y, '--', linewidth=1, color=color, label=label)
-    plt.title(title)
-    plt.xlabel(xlab)
-    plt.ylabel(ylab)
-
-
-
-
-def plot_histogram(x, title, xlab, color, lbl):
-
-    x_mean = np.median(x)
-    x_std = stdev(x)
-    x = np.clip(x, -2*x_mean, 2*x_mean)
-
-    y1,x1, _ = plt.hist(x, bins=60, color=color, label=lbl)
-    plt.xlabel(xlab, fontsize=15)
-    plt.ylabel('Frequency', fontsize=15)
-    plt.title(title, fontname="Times New Roman", fontsize=25, fontweight='bold')
-    plt.legend()
-
-
-
 
 
 
@@ -306,77 +196,30 @@ def analyse_cv( v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=
 
 
 
-def units(data, unit):
-
-    # This function converts the unit scale to the correct one
-
-    x = np.median(abs(data))
-    numer = 0
-    unit_scale = ['P', 'T', 'G', 'M', 'k', '', 'm', '$\mu$', 'n', 'p', 'f', 'a', 'z', 'y']
-    i = -1
-    lower_limit = 1e-24
-
-    max_scale = 1e+18
-    while max_scale> lower_limit:
-          previous_max = max_scale
-          max_scale = max_scale/1000
-          i +=1
-          if x >= max_scale and x< previous_max:
-             numerator = max_scale
-             string = '{}{}'.format(unit_scale[i], unit)
-
-    return numerator, string
 
 
-def normalise_parameter(parameter, unit):
 
-    # This function scales the data and return the latter and the units in the correct form
+def evaluate_results(y, config_file, parameter_name, sensor_type):
 
-    denominator, unit = units(parameter, unit)
-    #x = np.array([j / denominator for j in parameter])
-    x = parameter.divide(denominator)
+    flag = True
+    for i in y:
+       if sensor_type=='2-S' and parameter_name=='Cac':
+           i = i/2 # to scale at same strip length with PSS and facilitate the comparison
+           
+       if i< float(config_file['expected_range'][0]) or i > float(config_file['expected_range'][1]):
+           
+           flag = False
+           
+    return flag
+
+
+
+
+def send_slack_message(message):
+
+    link_from_slack = get_link_for_slack_api() #"https://hooks.slack.com/services/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"
     
-    return x, unit
-
-
-
-
-def outlier_aware_hist(data, lower=None, upper=None):
-    upp =[]
-    low=[]
-    if not lower or lower < min(data):# .min():
-        lower = min(data)
-        lower_outliers = False
-    else:
-        lower_outliers = True
-
-    if not upper or upper > max(data):
-        upper = max(data)
-        upper_outliers = False
-    else:
-        upper_outliers = True
-
-    n, bins, patches = plt.hist(data, range=(lower, upper), bins=50, alpha=0.5, histtype='bar', ec='black', color='green')
-
-    if lower_outliers:
-
-        n_lower_outliers = sum([i < lower for i in data])
-        for i in data:
-            if i < lower:
-              low.append(float(i))
-        patches[0].set_height(patches[0].get_height() + n_lower_outliers)
-        patches[0].set_facecolor('blue')
-        patches[0].set_label('Lower outliers: ({:.3g}, {:.3g})'.format(min(low), lower))
-
-    if upper_outliers:
-        n_upper_outliers = sum([i > upper for i in data])
-        for i in data:
-            if i > upper:
-              upp.append(float(i))
-        patches[-1].set_height(patches[-1].get_height() + n_upper_outliers)
-        patches[-1].set_facecolor('red')
-        patches[-1].set_label('Upper outliers: ({:.3f}, {:.3f})'.format(min(upp), max(data)))
-
-    if lower_outliers or upper_outliers:
-        plt.legend()
-
+    payload = '{"text": "%s"}' %message
+    response = requests.post(link_from_slack, data = payload)
+                             
+    print(response.text)
