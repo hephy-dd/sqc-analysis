@@ -217,7 +217,7 @@ def evaluate_results(y, config_file, parameter_name, sensor_type):
 
 def send_slack_message(message):
 
-    link_from_slack = get_link_for_slack_api() #"https://hooks.slack.com/services/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"
+    link_from_slack = get_link_for_slack_api() 
     
     payload = '{"text": "%s"}' %message
     response = requests.post(link_from_slack, data = payload)
