@@ -1,0 +1,60 @@
+
+Parameters:
+
+   Flute 1: ['fet', 'v_fb', 'c_acc', 't_ox', 'n_ox', 'vdpPoly', 'vdpPoly_r', 'vdpN', 'vdpN_r', 'vdpPstp', 'vdpPstp_r', 'cap_l', 'cap_r']
+   Flute 2: ['i_surf', 's0', 'meand_poly', 'lw_n', 'lw_pstp4', 'lw_pstp2', 'v_bd']
+   Flute 3: ['i600', 'i300', 'v_fd', 'rho', 'd_conc', 'meand_metal', 'vdp_met', 'vdp_met_r', 'vdp_cb', 'vdp_cb_r', 't_line_cb', 'vdpBulk', 'vdpBulk_r', 'vdpBulk_rho_old', 'vdpBulk_rho'] 
+   Flute 4: ['i_surf05', 's0_gcd05', 'r_cont_poly', 'r_cont_n', 'cont_p', 'cont_poly', 'cont_n']
+   
+
+Plot:
+
+  parameters: 
+         'fet': ['Vth', ' ','[V]'] 
+         'v_fb': ['Vfb', ' ','[V]'] 
+         'c_acc': ['C_acc', ' ','[pF]']           
+         't_ox': ['Tox', ' ','[nm]']  
+         'n_ox': ['Nox', ' ','[cm^-2]'] 
+         'vdpPoly': ['VdP_Rpoly', '(S)', '[kOhm/sq]']
+         'vdpPoly_r': ['VdP_Rpoly ' , '(R)', '[kOhm/sq]']
+         'vdpN': ['VdP_N+', '(S)', '[kOhm/sq]']
+         'vdpN_r': ['VdP_N+ ', '(R)', '[kOhm/sq]']         
+         'vdpPstp': ['VdP_Pstop', '(S)', '[kOhm/sq]']
+         'vdpPstp_r': ['Vdp_Pstop ', '(R)', '[kOhm/sq]']
+         'cap_l': ['Capacitor', '(L)', '[pF]']
+         'cap_r': ['Capacitor ', '(R)', '[pF]']
+         'i_surf': ['I_surf', ' ','[pA]']
+         's0': ['v_surf', ' ','[cm/s]']
+         'meand_poly': ['PolySi Meander', ' ','[MOhm]']         
+         'lw_n': ['N+ Lwdth', ' ','[um]'] 
+         'lw_pstp4': ['Pstop Lwdth', '(4-term)', '[um]']
+         'lw_pstp2': ['Pstop Lwdth ', '(2-term)', '[um]']
+         'v_bd': ['V_bd', ' ', '[V]']
+         'i600': ['I@600V', ' ', '[uA]']
+         'i300': ['I@300V', ' ', '[uA]']
+         'v_fd': ['Vfd', ' ', '[V]']
+         'rho': ['Diode rho', ' ', '[kOhmcm]']
+         'd_conc': ['Doping Conc.', ' ', '[cm^-3]']
+         'meand_metal': ['Meander', ' ', '[Ohm]']
+         'vdp_met': ['Clover Metal', '(S)', '[mOhm/sq]']
+         'vdp_met_r': ['Clover Metal ', '(R)', '[mOhm/sq]']
+         'vdp_cb': ['VdP pPlus', '(S)', '[kOhm/sq]']
+         'vdp_cb_r': ['VdP pPlus ', '(R)', '[kOhm/sq]']
+         't_line_cb': ['Lwdth pPlus ', ' ', '[um]']
+         'vdpBulk': ['VdP bulk', '(S)', '[kOhm/sq]']
+         'vdpBulk_r': ['VdP bulk ', '(R)', '[kOhm/sq]'] 
+         'vdpBulk_rho_old': ['Bulk_rho_old', '(1.218)', '[kOhmcm]']
+         'vdpBulk_rho': ['Bulk rho ', '(1.081)', '[kOhmcm]'] 
+         'i_surf05': ['I_surf05', ' ', '[pA]'] 
+         's0_gcd05': ['v_surf05', ' ', '[cm/s]']
+         'r_cont_poly': ['CBKR PolySi', ' ', '[kOhm]']
+         'r_cont_n': ['CBKR Strip', ' ', '[Ohm]']
+         'cont_poly': ['Contact_Poly', ' ', '[MOhm]']
+         'cont_n':  ['Contact_Strip', ' ', '[kOhm]']
+         'cont_p': ['Contact_Edge', ' ', '[kOhm]']
+         
+         
+         
+Batches:
+    
+    batch_list:  ['VPX36240','VPX36241', 'VPX36698', 'VPX36699', 'VPX36700', 'VPX36701', 'VPX36800', 'VPX36801', 'VPX36802', 'VPX36803','VPX37079', 'VPX37081', VPX37404]     #'VPX35957','VPX36240', 'VPX35958', 'VPX36239',
