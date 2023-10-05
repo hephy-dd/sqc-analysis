@@ -69,13 +69,14 @@ def make_Dataframe_Stripscan(parameter, filename, sensor_id):
 
 def make_Dataframe_IVCV(filename, start_line):
 
+    
     if 'IVC' in filename: # if SQC IV data
         headers_IVC = read_config()['headers']['IVCV']
-    else: # if HPK IV data
+    elif 'HPK' in filename: # if HPK IV data
         if start_line==23:
-          headers_ivc = read_config()['headers']['HPK_IV'] # condition true if HPK IV 
+          headers_IVC = read_config()['headers']['HPK_IV'] # condition true if HPK IV 
         else:
-          headers_ivc = read_config()['headers']['HPK_CV'] # condition true if HPK CV
+          headers_IVC = read_config()['headers']['HPK_CV'] # condition true if HPK CV
           
     df = convert_txt_to_df(filename, headers_IVC, start_line) 
     
@@ -89,12 +90,12 @@ def plot_graph(x, y, color, label, title, xlab, ylab):
 
      
      plt.plot(x, y, '-o', color=color, markersize=4, label =label)
-     plt.title(title, fontname="Times New Roman", fontsize=16, fontweight='bold')
-     plt.xlabel(xlab, fontsize=12)
-     plt.ylabel(ylab, fontsize=12)
+     #plt.title(title, fontname="Times New Roman", fontsize=16, fontweight='bold')
+     plt.xlabel(xlab, fontsize=13, fontweight='bold')
+     plt.ylabel(ylab, fontsize=13, fontweight='bold')
    
-     plt.tick_params(axis = 'y', labelsize=10)
-     plt.tick_params(axis='x', labelsize=10)
+     plt.tick_params(axis = 'y', labelsize=12)
+     plt.tick_params(axis='x', labelsize=12)
      if 'IV' in title and np.max(y)>1000:
            plt.ylim(0, 1000) # limit current at 1 uA in order to be comparable to HPK plot 
      plt.legend(loc='best', fontsize=8, ncol=1)

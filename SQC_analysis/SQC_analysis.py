@@ -89,13 +89,16 @@ def overlay_plots(files, key, values):
            lbl='_'.join(lbl.split('_')[1:])
            lbl=lbl.split('.')[0]
        else:
-          lbl = os.path.basename(file)  
+          lbl='-'.join(os.path.basename(file).split('-')[:1 if 'PSS' in file else 2])
+          lbl='_'.join(lbl.split('_')[2:])
+          lbl=lbl.split('.')[0] 
     
     
-   
+      
        if "IVC" in file or "HPK" in file:
                  
            x,y = globals()['{}_analysis'.format(key)](file)
+      
             
        elif "Str" in file:  
            
@@ -182,25 +185,37 @@ def main():
 
     args = parse_args()
 
-    filename = glob.glob(f'{args.path}/*/*.txt', recursive=True) 
     
+    filename = glob.glob(f'{args.path}/*/*.txt', recursive=True) 
+    #adapted for SQC data as stored on HEROS
+ 
+    if len(filename)<1:
+       filename = glob.glob(f'{args.path}/*.txt', recursive=True) 
+       # assuming that you have HPK ascii files all stored in one folder
+       
+       
     most_recent_files = find_most_recent_file(filename)
-   
+    
   
     IVCV_files = [f for f in most_recent_files if "IVC" in f]
     Stripscan_files = [f for f in most_recent_files if "Str" in f]
     HPK_files = [f for f in filename if "HPK" in f]
-    
+   
     
     IV_config = sqc.read_config()['IVCV_Parameters']
   
     Stripscan_config = sqc.read_config()['Strip_Parameters']
+    
+    HPK_config = sqc.read_config()['Strip_Parameters']
     
     if len(IVCV_files)>=1:
          make_pdf_with_plots(IVCV_files, IV_config, "IVCV")
         
     if len(Stripscan_files)>=1:
          make_pdf_with_plots(Stripscan_files, Stripscan_config, "Stripscan")
+         
+    if len(HPK_files)>=1:
+         make_pdf_with_plots(HPK_files, IV_config, "HPK_IVCV")
     
     
     #message = build_slack_message(dictionary_with_flags, args.sensor)

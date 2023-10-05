@@ -7,6 +7,7 @@ headers :
   IVCV : ['Voltage [V]', 'current [A]', 'capacitance [F]', 'temperature [deg]', 'humidity [%]']
   HPK_IV : ['Voltage [V]',  'current [A]']
   HPK_CV : ['Voltage [V]',  'capacitance [F]']
+
    
 
 Strip_Parameters:
