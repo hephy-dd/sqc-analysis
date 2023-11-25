@@ -29,8 +29,8 @@ Strip_Parameters:
      units: M$\Omega$
      title: Polysilicon Resistance
      bad_strip: Low Rpoly
-     2S_threshold: 1.5 #Mohm
-     PSS_threshold: 1.5 #Mohm
+     2S_threshold: 1.5
+     PSS_threshold: 1.5 
      expected_range: [1, 2.2] #MOhm
      
    
@@ -113,7 +113,7 @@ IVCV_Parameters:
       expected_range: [0, 20000] #uA      
 
    CV:
-      variables: [Voltage, 1/C2]
+      variables: [Voltage, 1/C$^2$]
       units_conversion: 1e0
       units: F$^{-2}$
       title: Full Depletion Voltage curve
