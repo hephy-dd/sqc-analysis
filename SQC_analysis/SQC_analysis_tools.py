@@ -13,6 +13,7 @@ import scipy.signal
 import requests
 import sys
 import getopt
+from pretty_html_table import build_table
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -96,11 +97,25 @@ def plot_graph(x, y, color, label, title, xlab, ylab):
    
      plt.tick_params(axis = 'y', labelsize=12)
      plt.tick_params(axis='x', labelsize=12)
+ 
      if 'IV' in title and np.max(y)>1000:
            plt.ylim(0, 1000) # limit current at 1 uA in order to be comparable to HPK plot 
+    
+   
      plt.legend(loc='best', fontsize=8, ncol=1)
+     plt.tight_layout()
 
 
+
+def find_median_MAD(parameter):
+
+    median = parameter.median()
+    
+    diff = (parameter - median).abs()
+    MAD = diff.median()
+  
+    
+    return median, MAD
 
 
 def analyse_cv( v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=500, savgol_windowsize=None, min_correl=0.1, debug=False):
@@ -136,7 +151,7 @@ def analyse_cv( v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=
 
     # invert and square
     #c = [1./i**2 for i in c]
-
+  
     # get spline fit, requires strictlty increasing array
     y_norm = c / np.max(c)
     x_norm = np.arange(len(y_norm))
@@ -193,13 +208,54 @@ def analyse_cv( v, c, area=1.56e-4, carrier='electrons', cut_param=0.008, max_v=
             #print("The fit didn't work as expected, returning nan")
             return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, STATUS_FAILED
     
-    return v_dep1, v_dep2, rho
+    return v_dep1
+
+
+def make_html_table(df_iv, df_stripscan, df_with_bad_strips):
+
+   
+
+   batch = '_'.join(df_iv['Sensor'][0].split('_')[0:1])
+   print(batch)   
+   html_table_blue_light = build_table(df_iv, 'blue_light', text_align='center')
+   html_table_blue_light_2 = build_table(df_stripscan, 'blue_light', text_align='center')
+   html_table_blue_light_3 = build_table(df_with_bad_strips, 'blue_light', text_align='center')
+
+   with open('sqc_tables_batch_{}.html'.format(batch), 'w', encoding="utf-8") as f:
+       f.write("<html><body> <h1>SQC Parameters Batch <font color = #4000ff>{}</font></h1>\n</body></html>".format(batch))
+       f.write("\n")
+       f.write(html_table_blue_light + "\n" + html_table_blue_light_2 +"\n" + html_table_blue_light_3)
 
 
 
 
+def find_bad_strips(data, parameter, config, sensor):
 
-
+   bad_strips = 0
+   if '2-S' in sensor:
+   
+      string ='2S_threshold'
+   elif 'PSS' in sensor:
+   
+      string  = 'PSS_threshold'
+      
+   
+   for i in data:
+      if parameter in ['Istrip', 'Idiel', 'Cint']:
+         if np.abs(i) > config[string]:
+             bad_strips +=1
+             
+      elif parameter in ['Cac', 'Rint']:
+           if np.abs(i) < config[string]:
+             bad_strips +=1
+      elif parameter=='Rpoly':
+         
+          if i< (config[string] - 0.5) or i> (config[string] + 0.5):
+              bad_strips +=1
+           
+   return bad_strips
+   
+   
 def evaluate_results(y, config_file, parameter_name, sensor_type):
 
     flag = True
