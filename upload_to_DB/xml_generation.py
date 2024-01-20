@@ -13,14 +13,7 @@ import glob
 import logging
 
 
-'''
-This script fetches the data from the ascii files (IVC and/or Str) and produces
-a xml file for each parameter individually, according to the specifications established 
-from the DB and the OTSEEP group. 
 
-Developed by Kostas Damanakis, based on Dominic's Blöch script
-
-'''
 
 
 logger = logging.getLogger(__name__)
@@ -252,9 +245,19 @@ def save_as_xml(data_dict, filepath, name):
     :return:
     """
 
+    
+    xml_path = filepath + os.sep + 'xml_files'
+    
+    if os.path.isdir(xml_path):
+       pass
+    else:
+        os.mkdir(xml_path)
+    
+    
+    file = os.path.join(xml_path, os.path.basename(os.path.normpath(name)).split(".")[0] + ".xml")
 
-    file = os.path.join(os.path.normpath(filepath), name.split(".")[0] + ".xml")
-    file = os.path.join(os.getcwd(), file)
+    #file = os.path.join(os.getcwd(), file)
+  
 
 
     if isinstance(data_dict, ET.Element):
@@ -280,8 +283,9 @@ def save_as_xml(data_dict, filepath, name):
 def modify_xml_file(file):
 
     file1 = file.split('.')[0]
-    lbl = '_'.join(file1.split('_')[6:7])  # dummy solution to get the parameter string from the file name
-    print(lbl)
+    
+    lbl = '_'.join(file1.split('_')[7:])  # dummy solution to get the parameter string from the file name
+
     xml_table_name =  read_yaml_configuration('config_xml_list.yml')
 
     tree = ET.parse(file)
@@ -322,7 +326,7 @@ def modify_xml_file(file):
                          'EXTENSION_TABLE_NAME': 'TEST_SENSOR_{}'.format(xml_table_name['xml_table_name'][lbl]),
                          'NAME': 'Tracker Strip-Sensor {} Test'.format(xml_table_name['xml_table_name'][lbl])}
 
-    run_number = get_run_number()
+    run_number = 22 #get_run_number()
 
     for elm in root.findall(".//"):
         if elm.tag in xml_modifications.keys():
@@ -350,11 +354,12 @@ def generate_all_xml_files(filename, path):
     for file in filename:
 
         prefix = '_'.join(os.path.splitext(os.path.basename(os.path.normpath(file)))[0].split('_')[0:1])
+        
         template = deepcopy(xml_config_file['Template'])
 
         with open(file, 'r') as f:
             header = f.readlines()[:17 if prefix == 'Str' else 7]
-
+          
         template2 = dict_value_insert_iter(template, header, keyword_re)
 
         for parameter in config['Parameters'][prefix]:
@@ -371,7 +376,7 @@ def generate_all_xml_files(filename, path):
             dict = make_final_xml(dict_with_values, xml_template, xml_config_file)
 
             dict = change_file_specific_xml_header(dict, xml_config_file)
-
+           
             for subkey, value in dict.items():
                 save_as_xml(
                     value,
@@ -389,8 +394,8 @@ def generate_all_xml_files(filename, path):
 
 def get_run_number():
     
-    p1 = subprocess.run( ['python3', 'rhapi.py', '--login', '--url=https://cmsomsdet.cern.ch/tracker-resthub', '-f', 'csv', '--clean',
-         "select r.run_number from trker_cmsr.trk_ot_test_nextrun_v r"], capture_output=True)
+    p1 = subprocess.run( ['python3', 'rhapi.py', '-n', '--url=https://cmsdca.cern.ch/trk_rhapi', '-f', 'csv', '--clean', '--login',
+        "select r.run_number from trker_cmsr.trk_ot_test_nextrun_v r"], capture_output=True)
 
     answer = p1.stdout.decode()
     answer = answer.split()
@@ -404,9 +409,9 @@ def upload_to_db(folder):
     for file in folder:
 
         try:
-            p1 = subprocess.run(['python3', 'cmsdbldr_client.py', '--login', '--url=https://cmsdca.cern.ch/trk_loader/trker/cmsr', '{}'.format(file),  capture_output=True])
+            p1 = subprocess.run(['python3', 'cmsdbldr_client.py', '--login', '--url=https://cmsdca.cern.ch/trk_loader/trker/cmsr', '{}'.format(file)],  capture_output=True)
             #p1 = subprocess.run(
-             #   'python cmsdbldr_client.py --login --url=https://cmsdca.cern.ch/trk_loader/trker/cmsr {}',format(file),
+             #   'python3 cmsdbldr_client.py --login --url=https://cmsdca.cern.ch/trk_loader/trker/cmsr {}',format(file),
               #  capture_output=True)
 
             answer = p1.stdout.decode()
@@ -416,6 +421,23 @@ def upload_to_db(folder):
             print(error)
             #logging.exception('Exception occured: {}'.format(error))
 
+
+
+def find_most_recent_file(files):
+
+   # in case of remeasurements, it returns the file of the latest date
+
+   df = pd.DataFrame()
+   df['File'] = files
+   
+   df['Sensor'] = ['-'.join(os.path.basename(file).split('-')[:1 if 'PSS' in file else 2]) for file in files]
+   df['Date'] = ['-'.join(os.path.basename(f).split('-')[-5:]).split('.')[0] for f in files]
+   
+   df = df.sort_values('Date').drop_duplicates('Sensor',keep='last')
+   
+   most_recent_files = [f for f in files if f in df['File'].values]
+   
+   return most_recent_files
 
 
 ##############################################################################################################################################
@@ -431,18 +453,22 @@ def parse_args():
 def run():
 
     args = parse_args()
+    
+    filename = glob.glob(f'{args.path}/*/*.txt', recursive=True) 
+    #adapted for SQC data as stored on HEROS
+ 
+       
+       
+    most_recent_files = find_most_recent_file(filename)
+    
+    
+    generate_all_xml_files(most_recent_files, args.path)
+    
 
-    for subdirs, dirs, files in os.walk(args.path):
-
-        path = args.path
-        filename = glob.glob(path + os.sep + '*.txt')
-
-        generate_all_xml_files(filename, path)
-
-    xml_files_list = glob.glob(args.path + os.sep + '*.xml')
-
+    xml_files_list = glob.glob(args.path + os.sep + 'xml_files' + os.sep + '*.xml')
+    print(xml_files_list)
     #upload_to_db(xml_files_list)
-
+    
 
 if __name__ == "__main__":
 
